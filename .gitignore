@@ -1,0 +1,9 @@
+.idea/
+out/
+.vs/
+.vscode/
+build/
+CMakeUserPresets.json
+.clangd
+
+notes.md
