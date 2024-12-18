@@ -16,41 +16,8 @@
                 "CMAKE_CXX_STANDARD": "23",
                 "CMAKE_CXX_SCAN_FOR_MODULES": "OFF"
             }
-        },
-        {
-            "name": "ci",
-            "inherits": [
-                "base"
-            ],
-            "generator": "Ninja Multi-Config",
-            "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
-            "cacheVariables": {
-                "BUILD_TESTING": "ON"
-            }
         }
     ],
-    "buildPresets": [
-        {
-            "name": "ci-debug",
-            "configurePreset": "ci",
-            "configuration": "Debug"
-        },
-        {
-            "name": "ci-release",
-            "configurePreset": "ci",
-            "configuration": "Release"
-        }
-    ],
-    "testPresets": [
-        {
-            "name": "test-debug",
-            "configurePreset": "ci",
-            "configuration": "Debug"
-        },
-        {
-            "name": "test-release",
-            "configurePreset": "ci",
-            "configuration": "Release"
-        }
-    ]
+    "buildPresets": [],
+    "testPresets": []
 }
