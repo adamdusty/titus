@@ -12,11 +12,11 @@ add_library(titus::sdk ALIAS titus_sdk)
 
 target_sources(titus_sdk
     PUBLIC
-        FILE_SET sdk_private_headers
+        FILE_SET sdk_export_header
         TYPE     HEADERS
-        BASE_DIRS include
+        BASE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/export"
         FILES
-            "include/titus/export.hpp"
+            "${CMAKE_CURRENT_BINARY_DIR}/export/titus/export.hpp"
     PUBLIC
         FILE_SET sdk_headers
         TYPE     HEADERS
@@ -32,7 +32,7 @@ include(GenerateExportHeader)
 generate_export_header(
     titus_sdk
     BASE_NAME titus
-    EXPORT_FILE_NAME include/titus/export.hpp
+    EXPORT_FILE_NAME "export/titus/export.hpp"
     CUSTOM_CONTENT_FROM_VARIABLE pragma_suppress_c4251
 )
 
