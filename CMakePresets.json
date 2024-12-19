@@ -16,8 +16,46 @@
                 "CMAKE_CXX_STANDARD": "23",
                 "CMAKE_CXX_SCAN_FOR_MODULES": "OFF"
             }
+        },
+        {
+            "name": "ci",
+            "inherits": "base",
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
+                "BUILD_TESTING": "ON",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
         }
     ],
-    "buildPresets": [],
-    "testPresets": []
+    "buildPresets": [
+        {
+            "name": "ci-dbg",
+            "configurePreset": "ci",
+            "configuration": "Debug"
+        },
+        {
+            "name": "ci-rel",
+            "configurePreset": "ci",
+            "configuration": "Release"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "ci-dbg",
+            "configuration": "Debug",
+            "configurePreset": "ci",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "ci-rel",
+            "configuration": "Release",
+            "configurePreset": "ci",
+            "output": {
+                "outputOnFailure": true
+            }
+        }
+    ]
 }
