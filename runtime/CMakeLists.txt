@@ -17,3 +17,29 @@ add_custom_command(TARGET titus_rt POST_BUILD
     $<TARGET_FILE_DIR:titus_rt>
     COMMAND_EXPAND_LISTS
 )
+
+target_compile_options(titus_rt PRIVATE
+    $<$<CONFIG:Release>:-U_FORTIFY_SOURCE>
+    $<$<CONFIG:Release>:-D_FORTIFY_SOURCE=3>
+    -fno-omit-frame-pointer
+    -fstack-protector-strong
+    -fcf-protection=full
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Wconversion
+    -Wsign-conversion
+    -Wcast-qual
+    -Wformat=2
+    -Wundef
+    -Werror=float-equal
+    -Wcast-align
+    -Wunused
+    -Wnull-dereference
+    -Wdouble-promotion
+    -Wimplicit-fallthrough
+    -Wextra-semi
+    -Woverloaded-virtual
+    -Wnon-virtual-dtor
+    -Wold-style-cast
+)

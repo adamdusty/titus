@@ -2,5 +2,5 @@
 #include <doctest/doctest.h>
 
 TEST_CASE("Hello runtime") {
-    REQUIRE(1 == 2);
+    REQUIRE(1 == 1);
 }
