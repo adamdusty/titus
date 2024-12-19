@@ -20,7 +20,6 @@
         {
             "name": "ci",
             "inherits": "base",
-            "generator": "Ninja Multi-Config",
             "cacheVariables": {
                 "BUILD_TESTING": "ON",
                 "CMAKE_C_COMPILER": "clang",
