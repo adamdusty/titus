@@ -6,25 +6,17 @@ on:
 
 jobs:
   build-and-test:
-    name: ${{ matrix.config.os }}
-    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        config:
-        - os: ubuntu-latest
-          cc: clang
-          cxx: clang++
-        - os: windows-latest
-          cc: clang
-          cxx: clang++
+        os: [ubuntu-24.04, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: seanmiddleditch/gha-setup-ninja@master
-      - name: clang
-        run: clang++ --version
       - name: configure
-        run: cmake --preset ci -DCMAKE_C_COMPILER=${{ matrix.config.cc}} -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx}}
+        run: cmake --preset ci
       - name: build-rel
         run: cmake --build --preset ci-rel
       - name: test-rel
