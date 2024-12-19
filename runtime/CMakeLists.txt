@@ -11,12 +11,16 @@ set_target_properties(
     OUTPUT_NAME titus
 )
 
+if(WIN32)
+
 add_custom_command(TARGET titus_rt POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
     $<TARGET_RUNTIME_DLLS:titus_rt>
     $<TARGET_FILE_DIR:titus_rt>
     COMMAND_EXPAND_LISTS
 )
+
+endif()
 
 target_compile_options(titus_rt PRIVATE
     $<$<CONFIG:Release>:-U_FORTIFY_SOURCE>
