@@ -24,6 +24,13 @@ target_sources(rt_tests PRIVATE rt/tests.cpp)
 add_test(NAME sdk_tests COMMAND sdk_tests)
 add_test(NAME rt_tests COMMAND rt_tests)
 
+if(UNIX)
+target_compile_options(sdk_tests PRIVATE -fsanitize=address)
+target_compile_options(rt_tests PRIVATE -fsanitize=address)
+target_link_options(sdk_tests PRIVATE -fsanitize=address)
+target_link_options(rt_tests PRIVATE -fsanitize=address)
+endif(UNIX)
+
 if(WIN32)
 
 set(SDK_DLL_DIRS "$<TARGET_RUNTIME_DLL_DIRS:sdk_tests>")
@@ -40,7 +47,7 @@ set_tests_properties(rt_tests PROPERTIES
         "${ENV_OP}$<JOIN:${RT_DLL_DIRS},$<SEMICOLON>${ENV_OP}>"
 )
 
-endif()
+endif(WIN32)
 
 set(TEST_COMPILE_OPTS
     $<$<CONFIG:Release>:-U_FORTIFY_SOURCE>

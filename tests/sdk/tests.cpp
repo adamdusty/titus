@@ -2,5 +2,8 @@
 #include <doctest/doctest.h>
 
 TEST_CASE("Hello runtime") {
-    REQUIRE(1 == 1);
+    int* x = new int(24);
+    delete x;
+
+    CHECK(*x == 24);
 }
