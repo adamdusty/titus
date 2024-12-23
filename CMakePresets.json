@@ -20,20 +20,16 @@
         {
             "name": "ci",
             "inherits": "base",
-            "generator": "Ninja Multi-Config",
+            "generator": "Ninja",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_TESTING": "ON"
             }
         }
     ],
     "buildPresets": [
-        {
-            "name": "ci-dbg",
-            "configurePreset": "ci",
-            "configuration": "Debug"
-        },
         {
             "name": "ci-rel",
             "configurePreset": "ci",
@@ -41,14 +37,6 @@
         }
     ],
     "testPresets": [
-        {
-            "name": "ci-dbg",
-            "configuration": "Debug",
-            "configurePreset": "ci",
-            "output": {
-                "outputOnFailure": true
-            }
-        },
         {
             "name": "ci-rel",
             "configuration": "Release",

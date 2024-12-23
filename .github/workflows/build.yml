@@ -15,9 +15,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: seanmiddleditch/gha-setup-ninja@master
+      
+      - name: Cache cmake fetch content deps
+        id: cache-cmake-fc
+        uses: actions/cache@v4
+        with:
+          path: build/ci/_deps
+          key: ${{ runner.os }}-build
+
       - name: configure
         run: cmake --preset ci
+        
       - name: build-rel
         run: cmake --build --preset ci-rel
+
       - name: test-rel
         run: ctest --preset ci-rel
