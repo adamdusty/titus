@@ -7,8 +7,12 @@ project(
     LANGUAGES CXX
 )
 
+include(cmake/dependencies.cmake)
+
 add_library(titus_sdk SHARED)
 add_library(titus::sdk ALIAS titus_sdk)
+
+target_link_libraries(titus_sdk PUBLIC flecs::flecs quill::quill)
 
 target_sources(titus_sdk
     PUBLIC
