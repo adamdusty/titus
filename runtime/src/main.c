@@ -1,8 +1,3 @@
-/*
-TODO:
-    - Make powershell script for integration testing
-*/
-
 #include "config/config.h"
 #include "plugin/plugin.h"
 #include "sds/sds.h"
