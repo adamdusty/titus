@@ -7,4 +7,5 @@ target_sources(titus_rt
         src/config/config.c
         src/plugin/plugin.c
         src/error/error.c
+        src/sds/sds.c
 )

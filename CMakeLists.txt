@@ -6,3 +6,7 @@ option(TITUS_FETCHCONTENT "Download dependencies via Cmake FetchContent" ON)
 
 include(cmake/dependencies.cmake)
 add_subdirectory(runtime)
+
+if(BUILD_TESTING)
+    include(cmake/integration.cmake)
+endif(BUILD_TESTING)
