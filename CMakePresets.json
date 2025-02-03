@@ -1,0 +1,12 @@
+{
+    "version": 7,
+    "configurePresets": [
+        {
+            "name": "base",
+            "cacheVariables": {
+                "CMAKE_C_EXTENSIONS": "OFF",
+                "CMAKE_C_STANDARD": "23"
+            }
+        }
+    ]
+}
