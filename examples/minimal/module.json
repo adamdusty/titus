@@ -1,0 +1,11 @@
+{
+    "namespace": "example",
+    "name": "minimal",
+    "binary": "minimal",
+    "version": {
+        "major": 1,
+        "minor": 6,
+        "patch": 42656,
+        "annotation": "alpha"
+    }
+}

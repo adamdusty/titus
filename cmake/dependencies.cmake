@@ -21,6 +21,15 @@ FetchContent_Declare(
     FIND_PACKAGE_ARGS
 )
 
-FetchContent_MakeAvailable(SDL3 flecs)
+FetchContent_Declare(
+    yyjson
+    GIT_REPOSITORY  https://github.com/ibireme/yyjson.git
+    GIT_TAG         0.10.0
+    GIT_SHALLOW
+    SYSTEM
+    FIND_PACKAGE_ARGS
+)
+
+FetchContent_MakeAvailable(SDL3 flecs yyjson)
 
 endif(TITUS_FETCHCONTENT)

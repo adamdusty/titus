@@ -30,6 +30,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wconversion"
+
 #include "sds/sds.h"
 #include "sds/sdsalloc.h"
 #include <assert.h>
@@ -1407,3 +1410,4 @@ int main(void) {
     return sdsTest();
 }
 #endif
+#pragma clang diagnostic pop
