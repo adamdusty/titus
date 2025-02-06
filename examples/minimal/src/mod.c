@@ -7,9 +7,9 @@
 #endif
 
 PLUGIN_EXPORT void titus_initialize(void* ud) {
-    printf("Hello from minimal plugin initialization");
+    printf("Hello from minimal plugin initialization\n");
 }
 
 PLUGIN_EXPORT void titus_deinitialize(void* ud) {
-    printf("Hello from minimal plugin deinitialization");
+    printf("Hello from minimal plugin deinitialization\n");
 }

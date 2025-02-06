@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdio.h>
+
 #ifndef NDEBUG
 #if __GNUC__
 #define TITUS_ASSERT(c)                                                                                                \

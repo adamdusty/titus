@@ -8,3 +8,10 @@
 #define log_info(fmt, ...) SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, fmt, __VA_ARGS__)
 #define log_warn(fmt, ...) SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, fmt, __VA_ARGS__)
 #define log_error(fmt, ...) SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, fmt, __VA_ARGS__)
+
+// void titus_log_function(void* ud, int cat, SDL_LogPriority pri, const char* msg) {
+//     SDL_IOStream* s = (SDL_IOStream*)ud;
+//     if(NULL != s) {
+//         SDL_WriteIO(s, msg, SDL_strlen(msg));
+//     }
+// }

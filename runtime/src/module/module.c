@@ -10,13 +10,27 @@
 #include <string.h>
 #include <yyjson.h>
 
-// #ifdef __linux__
-// #define SHARED_OBJECT_FILE_EXT "so"
-// #elifdef _WIN32
-// #define SHARED_OBJECT_FILE_EXT "dll"
-// #endif
+#ifdef __linux__
+#define SHARED_OBJECT_FILE_EXT "so"
+#elifdef _WIN32
+#define SHARED_OBJECT_FILE_EXT "dll"
+#endif
 
 static const char* MANIFEST_FILE_NAME = "module.json";
+
+void titus_free_module(titus_module* mod) {
+    sdsfree(mod->directory_path);
+    sdsfree(mod->binary_path);
+    sdsfree(mod->resource_path);
+    SDL_UnloadObject(mod->handle);
+
+    mod->handle         = NULL;
+    mod->initialize     = NULL;
+    mod->deinitialize   = NULL;
+    mod->directory_path = NULL;
+    mod->binary_path    = NULL;
+    mod->resource_path  = NULL;
+}
 
 sds titus_version_to_string(const titus_module_version* ver) {
     TITUS_ASSERT(ver != NULL); // precondition: Attempting to read from NULL
@@ -47,6 +61,7 @@ sds titus_module_dir_from_manifest(const titus_module_manifest* man) {
 
 SDL_EnumerationResult manifest_callback(void* ud, const char* d, const char* f) {
     TITUS_ASSERT(NULL != ud); // precondition: Attempting to write to NULL
+    log_debug("Enumerating directory %s: %s", d, f);
 
     if(SDL_strcmp(f, MANIFEST_FILE_NAME) != 0) {
         return SDL_ENUM_CONTINUE;
@@ -55,15 +70,41 @@ SDL_EnumerationResult manifest_callback(void* ud, const char* d, const char* f) 
     sds path = sdsnew(d);
     path     = sdscat(path, f);
 
-    sds** paths = ud;
-    arrpush(*paths, path);
+    titus_module_manifest man = {0};
+    if(!titus_load_manifest_from_path(path, &man)) {
+        log_error("Found module.json (%s), but failed to load", path);
+        return SDL_ENUM_CONTINUE;
+    }
+    titus_module_load_info li = {.manifest = man, .binary = NULL, .resources = NULL};
+
+    if(li.manifest.binary) {
+        li.binary = sdsnew(d);
+        li.binary = sdscatfmt(li.binary, "%S.%s", man.binary, SHARED_OBJECT_FILE_EXT);
+    }
+
+    sds res = sdsnew(d);
+    res     = sdscat(res, "resources");
+    if(SDL_GetPathInfo(res, NULL)) {
+        li.resources = res;
+    } else {
+        log_debug("No resource folder found for module: %s:%s", li.manifest.namespace, li.manifest.name);
+        log_debug("Searched for resource folder at: %s", res);
+        sdsfree(res);
+    }
+
+    titus_module_load_info** li_arr = ud;
+    arrpush(*li_arr, li);
+
+    log_debug("Successfully gathered load info from %s", d);
 
     return SDL_ENUM_CONTINUE;
 }
 
-SDL_EnumerationResult version_callback(void* ud, const char* d, const char* f) {
-    // Enumerate over directories in the version level of the folder
-    // Callback for each manifest file in this level
+SDL_EnumerationResult modules_callback(void* ud, const char* d, const char* f) {
+    // Enumerate over directories in the namespace level of the folder
+    // Callback for each module name in this level
+    log_debug("Enumerating directory %s: %s", d, f);
+
     sds path = sdsnew(d);
     path     = sdscat(path, f);
 
@@ -81,53 +122,13 @@ SDL_EnumerationResult version_callback(void* ud, const char* d, const char* f) {
     return SDL_ENUM_CONTINUE;
 }
 
-SDL_EnumerationResult name_callback(void* ud, const char* d, const char* f) {
-    // Enumerate over directories in the name level of the folder
-    // Callback for each module version in this level
-    sds path = sdsnew(d);
-    path     = sdscat(path, f);
-
-    if(NULL == path) {
-        return SDL_ENUM_FAILURE;
-    }
-    SDL_PathInfo info = {0};
-    SDL_GetPathInfo(path, &info);
-
-    if(SDL_PATHTYPE_DIRECTORY == info.type) {
-        SDL_EnumerateDirectory(path, version_callback, ud);
-    }
-
-    sdsfree(path);
-    return SDL_ENUM_CONTINUE;
-}
-
-SDL_EnumerationResult namespace_callback(void* ud, const char* d, const char* f) {
-    // Enumerate over directories in the namespace level of the folder
-    // Callback for each module name in this level
-    sds path = sdsnew(d);
-    path     = sdscat(path, f);
-
-    if(NULL == path) {
-        return SDL_ENUM_FAILURE;
-    }
-    SDL_PathInfo info = {0};
-    SDL_GetPathInfo(path, &info);
-
-    if(SDL_PATHTYPE_DIRECTORY == info.type) {
-        SDL_EnumerateDirectory(path, name_callback, ud);
-    }
-
-    sdsfree(path);
-    return SDL_ENUM_CONTINUE;
-}
-
 sds* titus_get_manifest_paths_from_root(const char* root) {
     TITUS_ASSERT(NULL != root); // precondition: Attempting to read from NULL
 
     sds* paths  = NULL;
-    bool result = SDL_EnumerateDirectory(root, namespace_callback, &paths);
+    bool result = SDL_EnumerateDirectory(root, modules_callback, &paths);
     if(!result) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to enumerate directory: %s", SDL_GetError());
+        log_error("Error while enumerating directory: %s", SDL_GetError());
     }
 
     return paths;
@@ -139,7 +140,7 @@ bool titus_load_manifest_from_path(const char* path, titus_module_manifest* out)
 
     // Check if path exists
     if(!SDL_GetPathInfo(path, NULL)) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Manifest file does not exists at path: %s", path);
+        log_warn("Manifest file does not exists at path: %s", path);
         return false;
     }
 
@@ -208,7 +209,7 @@ bool titus_parse_manifest(char* data, size_t len, titus_module_manifest* out) {
 
     char* msg = NULL;
     if(!titus_validate_manifest(out, &msg)) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to parse valid manifest: %s", msg);
+        log_error("Failed to parse valid manifest: %s", msg);
         yyjson_doc_free(doc);
         return false;
     }
@@ -231,4 +232,48 @@ bool titus_validate_manifest(titus_module_manifest* man, char** msg) {
     }
 
     return true;
+}
+
+titus_module_load_info* titus_get_module_load_info_from_dir(const char* root) {
+    TITUS_ASSERT(NULL != root); // precondition: Attempting to read from NULL
+
+    titus_module_load_info* loads = NULL;
+
+    bool result = SDL_EnumerateDirectory(root, modules_callback, &loads);
+    if(!result) {
+        log_error("Error while enumerating directory: %s", SDL_GetError());
+    }
+
+    return loads;
+}
+
+titus_module titus_load_module(titus_module_load_info* load_info) {
+    TITUS_ASSERT(load_info != NULL); // precondition: NULL load_info
+
+    titus_module module = {0};
+    module.manifest     = load_info->manifest;
+
+    if(SDL_GetPathInfo(load_info->binary, NULL)) {
+        module.binary_path = load_info->binary;
+        module.handle      = SDL_LoadObject(load_info->binary);
+
+        if(NULL == module.handle) {
+            log_error("Failed to load shared object at %s", load_info->binary);
+        }
+    }
+
+    if(SDL_GetPathInfo(load_info->resources, NULL)) {
+        module.resource_path = load_info->resources;
+    }
+
+    if(NULL != module.handle) {
+        module.initialize   = (titus_initialize_proc)SDL_LoadFunction(module.handle, TITUS_MODULE_INITIALIZE);
+        module.deinitialize = (titus_deinitialize_proc)SDL_LoadFunction(module.handle, TITUS_MODULE_DEINITIALIZE);
+    }
+
+    load_info->manifest  = (titus_module_manifest){0};
+    load_info->binary    = NULL;
+    load_info->resources = NULL;
+
+    return module;
 }
