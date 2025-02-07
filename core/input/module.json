@@ -1,0 +1,10 @@
+{
+    "namespace": "core",
+    "name": "input",
+    "binary": "input",
+    "version": {
+        "major": 0,
+        "minor": 1,
+        "patch": 0
+    }
+}

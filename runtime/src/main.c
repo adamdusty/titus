@@ -1,17 +1,5 @@
 /*
-    If the modules directory is going to be a flat directory of directories,
-    the runtime needs to get all the necessary information to load a module from a single
-    pass. If we just get the manifests on the first path, we need to re-iterate over the mod
-    directories and match up manifests with their directories. My thought here late at
-    night is to get all a module's info as we iterate over the directories
-    {
-        manifest:   path
-        binary:     optional<path>
-        resources:  optional<path>
-    }
-
-    Maybe the runtime can iterate through to get all the paths, then load everything from the paths in the background?
-*/
+ */
 
 #include "assert/assert.h"
 #include "config/config.h"
@@ -22,11 +10,43 @@
 #include "timer/timer.h"
 
 #include <SDL3/SDL.h>
+#include <flecs.h>
 #include <stddef.h>
 #include <stdio.h>
 
 void initialize_logging(const titus_config* config);
+void initialize_application_context(titus_application_context* ctx);
+void deinitialize_application_context(titus_application_context* ctx);
 titus_module* load_modules(const titus_config* config, sds executable_direcory);
+
+typedef struct quit {
+    bool should_quit;
+} quit;
+ECS_COMPONENT_DECLARE(quit);
+
+typedef struct core_frame_input {
+    size_t count;
+    SDL_Event events[255];
+} core_frame_input;
+void process_input(ecs_iter_t* it) {
+    core_frame_input* fi = ecs_field(it, core_frame_input, 0);
+
+    for(int i = 0; i < it->count; i++) {
+        for(size_t j = 0; j < fi->count; j++) {
+
+            switch(fi->events[j].type) {
+            case SDL_EVENT_KEY_DOWN: {
+                printf("Key pressed!: %d", fi->events[j].key.scancode);
+                if(fi->events[j].key.scancode == SDL_SCANCODE_ESCAPE) {
+                    printf("quit\n");
+                    ecs_singleton_set(it->world, quit, {.should_quit = true});
+                }
+                break;
+            }
+            }
+        }
+    }
+}
 
 int main(int, char*[]) {
     SDL_SetAppMetadata("Titus", "0.1.0-alpha", "com.github.titus");
@@ -34,8 +54,6 @@ int main(int, char*[]) {
         log_error("Unable to initialize SDL: %s", SDL_GetError());
         exit(EXIT_FAILURE);
     }
-
-    SDL_Window* window = SDL_CreateWindow("Titus", 640, 480, SDL_WINDOW_RESIZABLE);
 
     const char* base_path = SDL_GetBasePath();
     if(NULL == base_path) {
@@ -47,20 +65,38 @@ int main(int, char*[]) {
     titus_config app_config = titus_default_config();
     initialize_logging(&app_config);
 
+    titus_application_context context = {0};
+    initialize_application_context(&context);
+
     titus_module* modules = load_modules(&app_config, executable_directory_path);
     for(int i = 0; i < arrlen(modules); i++) {
-        modules[i].initialize(NULL);
+        modules[i].initialize(&context);
     }
 
-    titus_timer t = {0};
-    SDL_Delay(1500);
-    // bool quit = false;
-    // while(!quit) {
-    //     ecs_progress(world, t.delta);
-    // }
+    // ECS_SYSTEM(context.ecs, process_input, EcsPreUpdate, quit);
+
+    // titus_timer t = {0};
+    ECS_COMPONENT_DEFINE(context.ecs, quit);
+    ecs_system(context.ecs,
+               {
+                   .callback = process_input,
+                   .entity   = ecs_entity(context.ecs,
+                                          {
+                                              .name = "process_input",
+                                              .add  = ecs_ids(ecs_dependson(EcsOnUpdate)),
+                                        }),
+                   .query.terms =
+                       {
+                           {.first.name = "core:input"},
+                       },
+               });
+    ecs_singleton_set(context.ecs, quit, {false});
+    while(!ecs_singleton_get(context.ecs, quit)->should_quit) {
+        ecs_progress(context.ecs, 0);
+    }
 
     for(int i = 0; i < arrlen(modules); i++) {
-        modules[i].deinitialize(NULL);
+        modules[i].deinitialize(&context);
     }
 
     /* Clean up */
@@ -70,6 +106,7 @@ int main(int, char*[]) {
     arrfree(modules);
 
     sdsfree(executable_directory_path);
+    deinitialize_application_context(&context);
     SDL_Quit();
     /* ***** */
 
@@ -92,6 +129,27 @@ void initialize_logging(const titus_config* config) {
 
     // SDL_IOStream* log = SDL_IOFromFile("log.txt", "a");
     // SDL_SetLogOutputFunction(titus_log_function, log);
+}
+
+typedef struct x {
+    int y;
+} x;
+
+typedef x* x_p;
+
+void initialize_application_context(titus_application_context* ctx) {
+    ctx->window = SDL_CreateWindow("Titus", 640, 480, 0);
+    ctx->ecs    = ecs_init();
+
+    ecs_component(ctx->ecs,
+                  {
+                      .entity = ecs_entity(ctx->ecs, {.name = "SDL_Window"}),
+                      .type   = {.size = sizeof(SDL_Window*), .alignment = alignof(SDL_Window*)},
+                  });
+}
+void deinitialize_application_context(titus_application_context* ctx) {
+    ecs_fini(ctx->ecs);
+    SDL_DestroyWindow(ctx->window);
 }
 
 titus_module* load_modules(const titus_config* config, sds executable_directory) {

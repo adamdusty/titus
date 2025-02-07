@@ -4,6 +4,7 @@
 #include "sds/sds.h"
 #include <SDL3/SDL.h>
 #include <stdint.h>
+#include <titus/sdk.h>
 
 #define TITUS_MODULE_INITIALIZE "titus_initialize"
 #define TITUS_MODULE_DEINITIALIZE "titus_deinitialize"
@@ -32,8 +33,8 @@ typedef struct titus_module_load_info {
     sds resources; // Relative path to resources directory
 } titus_module_load_info;
 
-typedef void (*titus_initialize_proc)(void*);
-typedef void (*titus_deinitialize_proc)(void*);
+typedef void (*titus_initialize_proc)(titus_application_context*);
+typedef void (*titus_deinitialize_proc)(titus_application_context*);
 
 typedef struct titus_module {
     titus_module_manifest manifest;
@@ -42,8 +43,8 @@ typedef struct titus_module {
     sds binary_path;
     sds resource_path;
 
-    void (*initialize)(void*);
-    void (*deinitialize)(void*);
+    titus_initialize_proc initialize;
+    titus_deinitialize_proc deinitialize;
 } titus_module;
 
 /*
