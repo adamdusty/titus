@@ -7,7 +7,6 @@
 #include "log/log.h"
 #include "module/module.h"
 #include "sds/sds.h"
-#include "timer/timer.h"
 
 #include <SDL3/SDL.h>
 #include <flecs.h>
@@ -19,34 +18,7 @@ void initialize_application_context(titus_application_context* ctx);
 void deinitialize_application_context(titus_application_context* ctx);
 titus_module* load_modules(const titus_config* config, sds executable_direcory);
 
-typedef struct quit {
-    bool should_quit;
-} quit;
-ECS_COMPONENT_DECLARE(quit);
-
-typedef struct core_frame_input {
-    size_t count;
-    SDL_Event events[255];
-} core_frame_input;
-void process_input(ecs_iter_t* it) {
-    core_frame_input* fi = ecs_field(it, core_frame_input, 0);
-
-    for(int i = 0; i < it->count; i++) {
-        for(size_t j = 0; j < fi->count; j++) {
-
-            switch(fi->events[j].type) {
-            case SDL_EVENT_KEY_DOWN: {
-                printf("Key pressed!: %d", fi->events[j].key.scancode);
-                if(fi->events[j].key.scancode == SDL_SCANCODE_ESCAPE) {
-                    printf("quit\n");
-                    ecs_singleton_set(it->world, quit, {.should_quit = true});
-                }
-                break;
-            }
-            }
-        }
-    }
-}
+typedef int quit_t;
 
 int main(int, char*[]) {
     SDL_SetAppMetadata("Titus", "0.1.0-alpha", "com.github.titus");
@@ -73,25 +45,10 @@ int main(int, char*[]) {
         modules[i].initialize(&context);
     }
 
-    // ECS_SYSTEM(context.ecs, process_input, EcsPreUpdate, quit);
-
     // titus_timer t = {0};
-    ECS_COMPONENT_DEFINE(context.ecs, quit);
-    ecs_system(context.ecs,
-               {
-                   .callback = process_input,
-                   .entity   = ecs_entity(context.ecs,
-                                          {
-                                              .name = "process_input",
-                                              .add  = ecs_ids(ecs_dependson(EcsOnUpdate)),
-                                        }),
-                   .query.terms =
-                       {
-                           {.first.name = "core:input"},
-                       },
-               });
-    ecs_singleton_set(context.ecs, quit, {false});
-    while(!ecs_singleton_get(context.ecs, quit)->should_quit) {
+    ECS_COMPONENT(context.ecs, quit_t);
+    ecs_singleton_set(context.ecs, quit_t, {1});
+    while(*ecs_singleton_get(context.ecs, quit_t) != 0) {
         ecs_progress(context.ecs, 0);
     }
 
@@ -131,21 +88,16 @@ void initialize_logging(const titus_config* config) {
     // SDL_SetLogOutputFunction(titus_log_function, log);
 }
 
-typedef struct x {
-    int y;
-} x;
-
-typedef x* x_p;
-
 void initialize_application_context(titus_application_context* ctx) {
     ctx->window = SDL_CreateWindow("Titus", 640, 480, 0);
     ctx->ecs    = ecs_init();
 
-    ecs_component(ctx->ecs,
-                  {
-                      .entity = ecs_entity(ctx->ecs, {.name = "SDL_Window"}),
-                      .type   = {.size = sizeof(SDL_Window*), .alignment = alignof(SDL_Window*)},
-                  });
+    ecs_entity_t window = ecs_component(ctx->ecs,
+                                        {
+                                            .entity = ecs_entity(ctx->ecs, {.name = "runtime:window"}),
+                                            .type   = {.size = sizeof(SDL_Window*), .alignment = alignof(SDL_Window*)},
+                                        });
+    ecs_set_id(ctx->ecs, window, window, sizeof(SDL_Window*), &ctx->window);
 }
 void deinitialize_application_context(titus_application_context* ctx) {
     ecs_fini(ctx->ecs);
