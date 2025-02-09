@@ -1,2 +1,3 @@
 add_subdirectory(components)
 add_subdirectory(input)
+add_subdirectory(renderer)

@@ -63,7 +63,7 @@ sds titus_module_dir_from_manifest(const titus_module_manifest* man) {
 
 SDL_EnumerationResult manifest_callback(void* ud, const char* d, const char* f) {
     TITUS_ASSERT(NULL != ud); // precondition: Attempting to write to NULL
-    log_debug("Enumerating directory %s: %s", d, f);
+    titus_log_verbose("Enumerating directory %s: %s", d, f);
 
     if(SDL_strcmp(f, MANIFEST_FILE_NAME) != 0) {
         return SDL_ENUM_CONTINUE;
@@ -74,7 +74,7 @@ SDL_EnumerationResult manifest_callback(void* ud, const char* d, const char* f) 
 
     titus_module_manifest man = {0};
     if(!titus_load_manifest_from_path(path, &man)) {
-        log_error("Found module.json (%s), but failed to load", path);
+        titus_log_error("Found module.json (%s), but failed to load", path);
         return SDL_ENUM_CONTINUE;
     }
     titus_module_load_info li = {.manifest = man, .binary = NULL, .resources = NULL};
@@ -89,15 +89,15 @@ SDL_EnumerationResult manifest_callback(void* ud, const char* d, const char* f) 
     if(SDL_GetPathInfo(res, NULL)) {
         li.resources = res;
     } else {
-        log_debug("No resource folder found for module: %s:%s", li.manifest.namespace, li.manifest.name);
-        log_debug("Searched for resource folder at: %s", res);
+        titus_log_debug("No resource folder found for module: %s:%s", li.manifest.namespace, li.manifest.name);
+        titus_log_debug("Searched for resource folder at: %s", res);
         sdsfree(res);
     }
 
     titus_module_load_info** li_arr = ud;
     arrpush(*li_arr, li);
 
-    log_debug("Successfully gathered load info from %s", d);
+    titus_log_debug("Successfully gathered load info from %s", d);
 
     return SDL_ENUM_CONTINUE;
 }
@@ -105,7 +105,7 @@ SDL_EnumerationResult manifest_callback(void* ud, const char* d, const char* f) 
 SDL_EnumerationResult modules_callback(void* ud, const char* d, const char* f) {
     // Enumerate over directories in the namespace level of the folder
     // Callback for each module name in this level
-    log_debug("Enumerating directory %s: %s", d, f);
+    titus_log_verbose("Enumerating directory %s: %s", d, f);
 
     sds path = sdsnew(d);
     path     = sdscat(path, f);
@@ -130,7 +130,7 @@ sds* titus_get_manifest_paths_from_root(const char* root) {
     sds* paths  = NULL;
     bool result = SDL_EnumerateDirectory(root, modules_callback, &paths);
     if(!result) {
-        log_error("Error while enumerating directory: %s", SDL_GetError());
+        titus_log_error("Error while enumerating directory: %s", SDL_GetError());
     }
 
     return paths;
@@ -142,7 +142,7 @@ bool titus_load_manifest_from_path(const char* path, titus_module_manifest* out)
 
     // Check if path exists
     if(!SDL_GetPathInfo(path, NULL)) {
-        log_warn("Manifest file does not exists at path: %s", path);
+        titus_log_warn("Manifest file does not exists at path: %s", path);
         return false;
     }
 
@@ -156,7 +156,7 @@ bool titus_parse_manifest(char* data, size_t len, titus_module_manifest* out) {
     TITUS_ASSERT(out != NULL); // precondition: Attempting to write to NULL
 
     if(NULL == data || len == 0) {
-        log_error("Empty manifest");
+        titus_log_error("Empty manifest");
         return false;
     }
 
@@ -165,13 +165,13 @@ bool titus_parse_manifest(char* data, size_t len, titus_module_manifest* out) {
     yyjson_doc* doc        = yyjson_read_opts(data, len, flags, NULL, &err);
 
     if(NULL == doc) {
-        log_error("Failed to read json document");
+        titus_log_error("Failed to read json document");
 
         size_t line = 0;
         size_t col  = 0;
         size_t ch   = 0;
         if(yyjson_locate_pos(data, len, err.pos, &line, &col, &ch)) {
-            log_error("%s: [%llu: %llu]", err.msg, line, col);
+            titus_log_error("%s: [%llu: %llu]", err.msg, line, col);
         }
         return false;
     }
@@ -211,7 +211,7 @@ bool titus_parse_manifest(char* data, size_t len, titus_module_manifest* out) {
 
     char* msg = NULL;
     if(!titus_validate_manifest(out, &msg)) {
-        log_error("Failed to parse valid manifest: %s", msg);
+        titus_log_error("Failed to parse valid manifest: %s", msg);
         yyjson_doc_free(doc);
         return false;
     }
@@ -243,7 +243,7 @@ titus_module_load_info* titus_get_module_load_info_from_dir(const char* root) {
 
     bool result = SDL_EnumerateDirectory(root, modules_callback, &loads);
     if(!result) {
-        log_error("Error while enumerating directory: %s", SDL_GetError());
+        titus_log_error("Error while enumerating directory: %s", SDL_GetError());
     }
 
     return loads;
@@ -260,7 +260,7 @@ titus_module titus_load_module(titus_module_load_info* load_info) {
         module.handle      = SDL_LoadObject(load_info->binary);
 
         if(NULL == module.handle) {
-            log_error("Failed to load shared object at %s", load_info->binary);
+            titus_log_error("Failed to load shared object at %s", load_info->binary);
         }
     }
 

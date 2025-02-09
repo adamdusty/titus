@@ -1,0 +1,10 @@
+{
+    "namespace": "core",
+    "name": "renderer",
+    "binary": "renderer",
+    "version": {
+        "major": 0,
+        "minor": 1,
+        "patch": 0
+    }
+}

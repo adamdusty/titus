@@ -1,4 +1,6 @@
-/*
+/* TODO:
+    - Module load order
+    - Logging configuration
  */
 
 #include "assert/assert.h"
@@ -23,13 +25,13 @@ typedef int quit_t;
 int main(int, char*[]) {
     SDL_SetAppMetadata("Titus", "0.1.0-alpha", "com.github.titus");
     if(!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
-        log_error("Unable to initialize SDL: %s", SDL_GetError());
+        titus_log_error("Unable to initialize SDL: %s", SDL_GetError());
         exit(EXIT_FAILURE);
     }
 
     const char* base_path = SDL_GetBasePath();
     if(NULL == base_path) {
-        log_error("Failed to find base path of executable");
+        titus_log_error("Failed to find base path of executable");
         exit(EXIT_FAILURE);
     }
     sds executable_directory_path = sdsnew(SDL_GetBasePath());
@@ -42,7 +44,8 @@ int main(int, char*[]) {
 
     titus_module* modules = load_modules(&app_config, executable_directory_path);
     for(int i = 0; i < arrlen(modules); i++) {
-        modules[i].initialize(&context);
+        if(NULL != modules[i].initialize)
+            modules[i].initialize(&context);
     }
 
     // titus_timer t = {0};
@@ -53,11 +56,13 @@ int main(int, char*[]) {
     }
 
     for(int i = 0; i < arrlen(modules); i++) {
-        modules[i].deinitialize(&context);
+        if(NULL != modules[i].deinitialize)
+            modules[i].deinitialize(&context);
     }
 
     /* Clean up */
-    for(int i = 0; i < arrlen(modules); i++) {
+    // Deinit modules in reverse order
+    for(int i = arrlen(modules) - 1; i >= 0; i--) {
         titus_free_module(&modules[i]);
     }
     arrfree(modules);
@@ -73,7 +78,7 @@ int main(int, char*[]) {
 void initialize_logging(const titus_config* config) {
     sds log_level = sdsnew("app=");
     log_level     = sdscat(log_level, config->log_level);
-    log_info("%s", log_level);
+    titus_log_info("%s", log_level);
 #ifdef NDEBUG
     SDL_SetHint(SDL_HINT_LOGGING, log_level);
 #else
@@ -89,7 +94,7 @@ void initialize_logging(const titus_config* config) {
 }
 
 void initialize_application_context(titus_application_context* ctx) {
-    ctx->window = SDL_CreateWindow("Titus", 640, 480, 0);
+    ctx->window = SDL_CreateWindow("Titus", 640, 480, SDL_WINDOW_RESIZABLE);
     ctx->ecs    = ecs_init();
 
     ecs_entity_t window = ecs_component(ctx->ecs,
@@ -116,8 +121,8 @@ titus_module* load_modules(const titus_config* config, sds executable_directory)
     sdsfree(module_path);
 
     if(NULL == module_load_infos) {
-        log_error("No module loading information found");
-        log_error("Runtime requires some core modules to function");
+        titus_log_error("No module loading information found");
+        titus_log_error("Runtime requires some core modules to function");
         exit(EXIT_FAILURE);
     }
 
@@ -128,8 +133,8 @@ titus_module* load_modules(const titus_config* config, sds executable_directory)
     }
 
     if(NULL == modules) {
-        log_error("No modules loaded");
-        log_error("Runtime has no functionality without modules");
+        titus_log_error("No modules loaded");
+        titus_log_error("Runtime has no functionality without modules");
         exit(EXIT_FAILURE);
     }
 

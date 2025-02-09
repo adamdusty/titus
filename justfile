@@ -2,7 +2,7 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 alias b := build
 alias c := configure
-alias e := examples
+alias p := packaged
 
 build:
     Measure-Command {Start-Process "cmake" -ArgumentList "--build --preset dev" -Wait -NoNewWindow}
@@ -13,5 +13,5 @@ configure:
 clean:
     cmake --build --preset dev --target clean
 
-examples:
-    build/dev/examples/titus_rt
+packaged:
+    build/dev/package/titus_rt

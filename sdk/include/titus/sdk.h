@@ -1,6 +1,6 @@
 #pragma once
 
+#include <SDL3/SDL.h>
 #include <titus/context/context.h>
 #include <titus/ecs/ecs.h>
-
-int get_num();
+#include <titus/log/log.h>

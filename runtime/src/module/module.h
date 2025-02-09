@@ -33,8 +33,8 @@ typedef struct titus_module_load_info {
     sds resources; // Relative path to resources directory
 } titus_module_load_info;
 
-typedef void (*titus_initialize_proc)(titus_application_context*);
-typedef void (*titus_deinitialize_proc)(titus_application_context*);
+typedef void (*titus_initialize_proc)(const titus_application_context*);
+typedef void (*titus_deinitialize_proc)(const titus_application_context*);
 
 typedef struct titus_module {
     titus_module_manifest manifest;

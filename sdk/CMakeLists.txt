@@ -15,9 +15,13 @@ target_sources(titus_sdk
         BASE_DIRS include
         FILES
             "include/titus/sdk.h"
+            "include/titus/context/context.h"
+            "include/titus/ecs/ecs.h"
+            "include/titus/log/log.h"
     PRIVATE
         src/sdk.c
         src/ecs.c
+        src/log.c
 )
 
 include(GenerateExportHeader)

@@ -8,11 +8,6 @@ void core_input_poll_system(ecs_iter_t* it);
 void process_input(ecs_iter_t* it);
 
 CORE_EXPORT void titus_initialize(titus_application_context* ctx) {
-    // ecs_entity_t comp = TITUS_REGISTER_COMPONENT_NAMED(ctx->ecs, "core", "input", core_frame_input);
-    // if(0 == comp) {
-    //     printf("Error registering component\n");
-    // }
-
     ecs_entity_t comp = ecs_lookup(ctx->ecs, "core:input");
 
     // Attach input component to world as singleton
