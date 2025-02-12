@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ds/stb_ds.h"
 #include "sds/sds.h"
+#include "titus/ds/stb_ds.h"
 #include <SDL3/SDL.h>
 #include <stdint.h>
 #include <titus/sdk.h>

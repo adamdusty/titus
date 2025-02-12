@@ -34,3 +34,7 @@ set_target_properties(
     EXPORT_NAME renderer
     OUTPUT_NAME renderer
 )
+
+add_custom_command(TARGET core_renderer POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/resources ${CMAKE_CURRENT_BINARY_DIR}/resources
+)

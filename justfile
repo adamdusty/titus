@@ -5,7 +5,7 @@ alias c := configure
 alias p := packaged
 
 build:
-    Measure-Command {Start-Process "cmake" -ArgumentList "--build --preset dev" -Wait -NoNewWindow}
+    (Measure-Command {Start-Process "cmake" -ArgumentList "--build --preset dev" -Wait -NoNewWindow}).TotalSeconds
 
 configure:
     cmake --preset dev

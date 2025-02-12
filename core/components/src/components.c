@@ -9,6 +9,6 @@ void check_component_registration(ecs_entity_t e) {
 }
 
 CORE_EXPORT void titus_initialize(titus_application_context* ctx) {
-    printf("Registering components\n");
+    titus_log_info("Registering core components");
     ecs_entity_t core_input = TITUS_REGISTER_COMPONENT_NAMED(ctx->ecs, "core", "input", core_frame_input);
 }

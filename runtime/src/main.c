@@ -1,14 +1,19 @@
 /* TODO:
     - Module load order
     - Logging configuration
+    - Resource management
+        - How do I load resources in module?
+            - Add base path to application context
+            - Asset manager in the runtme that registers resource folders at module load time
+            - Pass the resource folder to the module on module load
  */
 
 #include "assert/assert.h"
 #include "config/config.h"
-#include "ds/stb_ds.h"
 #include "log/log.h"
 #include "module/module.h"
 #include "sds/sds.h"
+#include "titus/ds/stb_ds.h"
 
 #include <SDL3/SDL.h>
 #include <flecs.h>
@@ -94,7 +99,7 @@ void initialize_logging(const titus_config* config) {
 }
 
 void initialize_application_context(titus_application_context* ctx) {
-    ctx->window = SDL_CreateWindow("Titus", 640, 480, SDL_WINDOW_RESIZABLE);
+    ctx->window = SDL_CreateWindow("Titus", 1280, 720, SDL_WINDOW_RESIZABLE);
     ctx->ecs    = ecs_init();
 
     ecs_entity_t window = ecs_component(ctx->ecs,

@@ -53,7 +53,7 @@ void core_input_poll_system(ecs_iter_t* it) {
         SDL_Event e;
         size_t index = 0;
         while(SDL_PollEvent(&e) && index < 255) {
-            inp->events[index++] = e;
+            inp[i].events[index++] = e;
         }
         inp->count = index;
     }

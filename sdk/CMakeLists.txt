@@ -18,7 +18,9 @@ target_sources(titus_sdk
             "include/titus/context/context.h"
             "include/titus/ecs/ecs.h"
             "include/titus/log/log.h"
+            "include/titus/ds/stb_ds.h"
     PRIVATE
+        src/stb_ds.c
         src/sdk.c
         src/ecs.c
         src/log.c

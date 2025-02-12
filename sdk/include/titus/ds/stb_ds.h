@@ -395,8 +395,10 @@ CREDITS
 #ifndef INCLUDE_STB_DS_H
 #define INCLUDE_STB_DS_H
 
+#include "titus/export.h"
 #include <stddef.h>
 #include <string.h>
+
 
 #ifndef STBDS_NO_SHORT_NAMES
 #define arrlen stbds_arrlen
@@ -495,15 +497,17 @@ extern void stbds_unit_tests(void);
 // Everything below here is implementation details
 //
 
-extern void* stbds_arrgrowf(void* a, size_t elemsize, size_t addlen, size_t min_cap);
-extern void stbds_arrfreef(void* a);
-extern void stbds_hmfree_func(void* p, size_t elemsize);
-extern void* stbds_hmget_key(void* a, size_t elemsize, void* key, size_t keysize, int mode);
-extern void* stbds_hmget_key_ts(void* a, size_t elemsize, void* key, size_t keysize, ptrdiff_t* temp, int mode);
-extern void* stbds_hmput_default(void* a, size_t elemsize);
-extern void* stbds_hmput_key(void* a, size_t elemsize, void* key, size_t keysize, int mode);
-extern void* stbds_hmdel_key(void* a, size_t elemsize, void* key, size_t keysize, size_t keyoffset, int mode);
-extern void* stbds_shmode_func(size_t elemsize, int mode);
+TITUS_EXPORT extern void* stbds_arrgrowf(void* a, size_t elemsize, size_t addlen, size_t min_cap);
+TITUS_EXPORT extern void stbds_arrfreef(void* a);
+TITUS_EXPORT extern void stbds_hmfree_func(void* p, size_t elemsize);
+TITUS_EXPORT extern void* stbds_hmget_key(void* a, size_t elemsize, void* key, size_t keysize, int mode);
+TITUS_EXPORT extern void*
+stbds_hmget_key_ts(void* a, size_t elemsize, void* key, size_t keysize, ptrdiff_t* temp, int mode);
+TITUS_EXPORT extern void* stbds_hmput_default(void* a, size_t elemsize);
+TITUS_EXPORT extern void* stbds_hmput_key(void* a, size_t elemsize, void* key, size_t keysize, int mode);
+TITUS_EXPORT extern void*
+stbds_hmdel_key(void* a, size_t elemsize, void* key, size_t keysize, size_t keyoffset, int mode);
+TITUS_EXPORT extern void* stbds_shmode_func(size_t elemsize, int mode);
 
 #ifdef __cplusplus
 }

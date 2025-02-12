@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include <stdint.h>
 #include <titus/sdk.h>
 
 typedef struct core_frame_input {

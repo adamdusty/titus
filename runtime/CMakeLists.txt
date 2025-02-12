@@ -8,7 +8,6 @@ target_sources(titus_lib
         src/module/module.c
         src/error/error.c
         src/sds/sds.c
-        src/ds/stb_ds.c
 )
 
 
