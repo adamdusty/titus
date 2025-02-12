@@ -310,7 +310,7 @@ NOTES
         hmgets_ts    shgets_ts
 
   * You iterate over the contents of a dynamic array and a hashmap in exactly
-    the same way, using arrlen/hmlen/shlen:
+    the same way, using arrlen/hmlen/:
 
       for (i=0; i < arrlen(foo); ++i)
          ... foo[i] ...
@@ -398,7 +398,6 @@ CREDITS
 #include "titus/export.h"
 #include <stddef.h>
 #include <string.h>
-
 
 #ifndef STBDS_NO_SHORT_NAMES
 #define arrlen stbds_arrlen

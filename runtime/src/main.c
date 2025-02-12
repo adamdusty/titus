@@ -10,22 +10,24 @@
 
 #include "assert/assert.h"
 #include "config/config.h"
-#include "log/log.h"
 #include "module/module.h"
 #include "sds/sds.h"
 #include "titus/ds/stb_ds.h"
-
 #include <SDL3/SDL.h>
 #include <flecs.h>
 #include <stddef.h>
 #include <stdio.h>
 
+typedef int quit_t;
+typedef struct module_kv {
+    char* key;
+    titus_module value;
+} module_kv;
+
 void initialize_logging(const titus_config* config);
 void initialize_application_context(titus_application_context* ctx);
 void deinitialize_application_context(titus_application_context* ctx);
-titus_module* load_modules(const titus_config* config, sds executable_direcory);
-
-typedef int quit_t;
+struct module_kv* load_modules(const titus_config* config, sds executable_direcory);
 
 int main(int, char*[]) {
     SDL_SetAppMetadata("Titus", "0.1.0-alpha", "com.github.titus");
@@ -47,10 +49,10 @@ int main(int, char*[]) {
     titus_application_context context = {0};
     initialize_application_context(&context);
 
-    titus_module* modules = load_modules(&app_config, executable_directory_path);
-    for(int i = 0; i < arrlen(modules); i++) {
-        if(NULL != modules[i].initialize)
-            modules[i].initialize(&context);
+    module_kv* modules = load_modules(&app_config, executable_directory_path);
+    for(int i = 0; i < shlen(modules); i++) {
+        if(NULL != modules[i].value.initialize)
+            modules[i].value.initialize(&context);
     }
 
     // titus_timer t = {0};
@@ -61,16 +63,16 @@ int main(int, char*[]) {
     }
 
     for(int i = 0; i < arrlen(modules); i++) {
-        if(NULL != modules[i].deinitialize)
-            modules[i].deinitialize(&context);
+        if(NULL != modules[i].value.deinitialize)
+            modules[i].value.deinitialize(&context);
     }
 
     /* Clean up */
     // Deinit modules in reverse order
-    for(int i = arrlen(modules) - 1; i >= 0; i--) {
-        titus_free_module(&modules[i]);
+    for(int i = shlen(modules) - 1; i >= 0; i--) {
+        titus_free_module(&modules[i].value);
     }
-    arrfree(modules);
+    shfree(modules);
 
     sdsfree(executable_directory_path);
     deinitialize_application_context(&context);
@@ -114,7 +116,7 @@ void deinitialize_application_context(titus_application_context* ctx) {
     SDL_DestroyWindow(ctx->window);
 }
 
-titus_module* load_modules(const titus_config* config, sds executable_directory) {
+module_kv* load_modules(const titus_config* config, sds executable_directory) {
     TITUS_ASSERT(config != NULL);
     TITUS_ASSERT(config->module_root_directory != NULL);
 
@@ -131,17 +133,23 @@ titus_module* load_modules(const titus_config* config, sds executable_directory)
         exit(EXIT_FAILURE);
     }
 
-    titus_module* modules = NULL;
+    // titus_module* modules = NULL;
+    module_kv* module_map = NULL;
     for(int i = 0; i < arrlen(module_load_infos); i++) {
         titus_module mod = titus_load_module(&module_load_infos[i]); // module_load_info gets moved into module here
-        arrpush(modules, mod);
+        // arrpush(modules, mod);
+        sds key = sdsdup(mod.manifest.namespace);
+        key     = sdscat(key, ":");
+        key     = sdscatsds(key, mod.manifest.name);
+        shput(module_map, key, mod);
     }
 
-    if(NULL == modules) {
+    if(NULL == module_map) {
         titus_log_error("No modules loaded");
         titus_log_error("Runtime has no functionality without modules");
         exit(EXIT_FAILURE);
     }
 
-    return modules;
+    return module_map;
+    // return modules;
 }

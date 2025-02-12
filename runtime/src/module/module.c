@@ -2,11 +2,9 @@
 
 #include "module/module.h"
 
-// #define STB_DS_IMPLEMENTATION
 #include "assert/assert.h"
-#include "log/log.h"
 #include "sds/sds.h"
-// #include "titus/ds/stb_ds.h"
+#include "titus/ds/stb_ds.h"
 #include <SDL3/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -88,6 +86,7 @@ SDL_EnumerationResult manifest_callback(void* ud, const char* d, const char* f) 
     sds res = sdsnew(d);
     res     = sdscat(res, "resources");
     if(SDL_GetPathInfo(res, NULL)) {
+        titus_log_debug("Resource folder found for %s:%s", li.manifest.namespace, li.manifest.name);
         li.resources = res;
     } else {
         titus_log_debug("No resource folder found for module: %s:%s", li.manifest.namespace, li.manifest.name);
