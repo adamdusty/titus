@@ -48,6 +48,7 @@ int main(int, char*[]) {
 
     titus_application_context context = {0};
     initialize_application_context(&context);
+    ECS_COMPONENT(context.ecs, quit_t);
 
     module_kv* modules = load_modules(&app_config, executable_directory_path);
     for(int i = 0; i < shlen(modules); i++) {
@@ -55,8 +56,15 @@ int main(int, char*[]) {
             modules[i].value.initialize(&context);
     }
 
+    ecs_entity_t mm = ecs_lookup(context.ecs, "runtime:module_map");
+    ecs_set_id(context.ecs, mm, mm, sizeof(module_kv), &modules);
+
+    const module_kv* mods = *(module_kv**)ecs_get_id(context.ecs, mm, mm);
+    for(int i = 0; i < shlen(mods); i++) {
+        titus_log_info("INFO: %s", mods[i].key);
+    }
+
     // titus_timer t = {0};
-    ECS_COMPONENT(context.ecs, quit_t);
     ecs_singleton_set(context.ecs, quit_t, {1});
     while(*ecs_singleton_get(context.ecs, quit_t) != 0) {
         ecs_progress(context.ecs, 0);
@@ -69,10 +77,10 @@ int main(int, char*[]) {
 
     /* Clean up */
     // Deinit modules in reverse order
-    for(int i = shlen(modules) - 1; i >= 0; i--) {
-        titus_free_module(&modules[i].value);
-    }
-    shfree(modules);
+    // for(int i = shlen(modules) - 1; i >= 0; i--) {
+    //     titus_free_module(&modules[i].value);
+    // }
+    // shfree(modules);
 
     sdsfree(executable_directory_path);
     deinitialize_application_context(&context);
@@ -104,11 +112,8 @@ void initialize_application_context(titus_application_context* ctx) {
     ctx->window = SDL_CreateWindow("Titus", 1280, 720, SDL_WINDOW_RESIZABLE);
     ctx->ecs    = ecs_init();
 
-    ecs_entity_t window = ecs_component(ctx->ecs,
-                                        {
-                                            .entity = ecs_entity(ctx->ecs, {.name = "runtime:window"}),
-                                            .type   = {.size = sizeof(SDL_Window*), .alignment = alignof(SDL_Window*)},
-                                        });
+    TITUS_REGISTER_COMPONENT_NAMED(ctx->ecs, "runtime", "module_map", module_kv*);
+    ecs_entity_t window = TITUS_REGISTER_COMPONENT_NAMED(ctx->ecs, "runtime", "window", SDL_Window*);
     ecs_set_id(ctx->ecs, window, window, sizeof(SDL_Window*), &ctx->window);
 }
 void deinitialize_application_context(titus_application_context* ctx) {
