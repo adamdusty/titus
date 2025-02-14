@@ -1,10 +1,12 @@
 #pragma once
 
-#include <SDL3/SDL.h>
-#include <stdint.h>
-#include <titus/sdk.h>
+#include "core/export.h"
+#include "core/input.h"
+#include "core/renderer.h"
+#include <flecs.h>
 
-typedef struct core_frame_input {
-    size_t count;
-    SDL_Event events[255];
-} core_frame_input;
+
+extern ECS_COMPONENT_DECLARE(core_render_material);
+extern ECS_COMPONENT_DECLARE(core_frame_input);
+
+CORE_EXPORT void coreImport(ecs_world_t* ecs);

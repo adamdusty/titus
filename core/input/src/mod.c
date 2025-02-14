@@ -7,8 +7,13 @@
 void core_input_poll_system(ecs_iter_t* it);
 void process_input(ecs_iter_t* it);
 
+// ECS_COMPONENT_DECLARE(core_frame_input);
+
 CORE_EXPORT void titus_initialize(titus_application_context* ctx) {
-    ecs_entity_t comp = ecs_lookup(ctx->ecs, "core:input");
+
+    ECS_IMPORT(ctx->ecs, core);
+    ecs_entity_t comp = ecs_id(core_frame_input);
+    // ecs_entity_t comp =  ecs_lookup(ctx->ecs, "core:input");
 
     // Attach input component to world as singleton
     ecs_set_id(ctx->ecs, comp, comp, sizeof(core_frame_input), &(core_frame_input){.count = 0, .events = {0}});
@@ -23,7 +28,8 @@ CORE_EXPORT void titus_initialize(titus_application_context* ctx) {
                                         }),
                    .query.terms =
                        {
-                           {.first.name = "core:input"},
+                           (ecs_term_t){.first.id = comp},
+                           //    {.first.name = "core:input"},
                        },
                });
 
@@ -37,7 +43,8 @@ CORE_EXPORT void titus_initialize(titus_application_context* ctx) {
                                         }),
                    .query.terms =
                        {
-                           {.first.name = "core:input"},
+                           (ecs_term_t){.first.id = comp},
+                           // {.first.name = "core:input"},
                        },
                });
 }

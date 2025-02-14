@@ -44,7 +44,16 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     render_context->device = gpu_device;
 
     char* resource_path = titus_get_asset_path(ctx->ecs, "core", "renderer", "shaders/vert.spv");
-    titus_log_info("resource path found! %s", resource_path);
+    size_t size;
+    uint8_t* bytes = load_spirv(resource_path, &size);
+
+    core_render_shader crs = {.code_bytes = bytes, .code_size = size};
+    SDL_GPUShaderCreateInfo ci =
+        shader_create_info_from_core_shader(&crs, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPU_SHADERSTAGE_VERTEX, 0, 0, 0, 0);
+    SDL_GPUShader* shader = SDL_CreateGPUShader(render_context->device, &ci);
+
+    titus_log_info("Shader successfully created");
+    SDL_ReleaseGPUShader(render_context->device, shader);
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {
