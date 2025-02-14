@@ -44,6 +44,7 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     render_context->device = gpu_device;
 
     char* resource_path = titus_get_asset_path(ctx->ecs, "core", "renderer", "shaders/vert.spv");
+    titus_log_info("resource path found! %s", resource_path);
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {

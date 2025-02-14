@@ -84,7 +84,7 @@ SDL_EnumerationResult manifest_callback(void* ud, const char* d, const char* f) 
     }
 
     sds res = sdsnew(d);
-    res     = sdscat(res, "resources");
+    res     = sdscat(res, "resources/");
     if(SDL_GetPathInfo(res, NULL)) {
         titus_log_debug("Resource folder found for %s:%s", li.manifest.namespace, li.manifest.name);
         li.resources = res;

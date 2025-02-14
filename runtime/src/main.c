@@ -1,11 +1,5 @@
 /* TODO:
     - Module load order
-    - Logging configuration
-    - Resource management
-        - How do I load resources in module?
-            - Add base path to application context
-            - Asset manager in the runtme that registers resource folders at module load time
-            - Pass the resource folder to the module on module load
  */
 
 #include "assert/assert.h"
@@ -53,12 +47,6 @@ int main(int, char*[]) {
     for(int i = 0; i < shlen(modules); i++) {
         if(NULL != modules[i].value.initialize)
             modules[i].value.initialize(&context);
-    }
-
-    const module_kv* mods = *(module_kv**)ecs_get_id(context.ecs, mm, mm);
-    for(int i = 0; i < shlen(mods); i++) {
-        titus_log_info("INFO: %s", mods[i].key);
-        titus_log_info("INFO: %s", mods[i].value.binary_path);
     }
 
     // titus_timer t = {0};

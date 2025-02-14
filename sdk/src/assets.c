@@ -3,25 +3,49 @@
 #include "titus/ds/stb_ds.h"
 #include "titus/log/log.h"
 #include "titus/module/module.h"
+#include <SDL3/SDL.h>
 
-
-char* titus_get_asset_path(ecs_world_t* ecs, char* namespace, char* name, char* /* path */) {
+/// Using the module namespace and name, looks up the module's resource path and returns
+/// the path appended to the resource directory, if a file exists at that path.
+/// @param ecs The ecs world.
+/// @param namespace The namespace of the module.
+/// @param name The name of the module.
+/// @param path The path of the resource relative to the module's resource directory.
+/// @return The path to the resource if it exists. NULL if nothing exists at the path or there is an error.
+/// @note The `char*` returned is actually an `sds` from `titus/sds/sds.h`. It should be freed by calling `sdsfree()`
+/// when no longer needed
+char* titus_get_asset_path(ecs_world_t* ecs, char* namespace, char* name, char* path) {
     ecs_entity_t module_map_component = ecs_lookup(ecs, "runtime:module_map");
     if(module_map_component == 0) {
-        titus_log_error("Unable to find module map");
+        titus_log_error("Failed to find module map component id.");
         return NULL;
-    } else {
-        titus_log_info("Found module map component");
     }
-    titus_log_info("%llu", module_map_component);
+
     module_kv* mod_map = *(module_kv**)ecs_get_mut_id(ecs, module_map_component, module_map_component);
-    titus_log_info("Mod map singleton: %p", (void*)mod_map);
+    if(NULL == mod_map) {
+        titus_log_error("Failed to find module map entity");
+        return NULL;
+    }
 
     sds p = sdsempty();
     p     = sdscatfmt(p, "%s:%s", namespace, name);
 
     module_kv* mod = shgetp(mod_map, p);
-    titus_log_info("ASSET: %s", mod->value.resource_path);
+    if(NULL == mod) {
+        titus_log_error("Failed to get module. %s not in map.", p);
+        sdsfree(p);
+        return NULL;
+    }
+    sdsfree(p);
 
-    return NULL;
+    p = sdsempty();
+    p = sdscatfmt(p, "%S%s", mod->value.resource_path, path);
+
+    if(!SDL_GetPathInfo(p, NULL)) {
+        titus_log_error("No resource found at path: %s", p);
+        sdsfree(p);
+        return NULL;
+    }
+
+    return p;
 }
