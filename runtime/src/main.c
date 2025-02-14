@@ -11,18 +11,14 @@
 #include "assert/assert.h"
 #include "config/config.h"
 #include "module/module.h"
-#include "sds/sds.h"
 #include "titus/ds/stb_ds.h"
+#include "titus/sds/sds.h"
 #include <SDL3/SDL.h>
 #include <flecs.h>
 #include <stddef.h>
 #include <stdio.h>
 
 typedef int quit_t;
-typedef struct module_kv {
-    char* key;
-    titus_module value;
-} module_kv;
 
 void initialize_logging(const titus_config* config);
 void initialize_application_context(titus_application_context* ctx);
@@ -51,17 +47,18 @@ int main(int, char*[]) {
     ECS_COMPONENT(context.ecs, quit_t);
 
     module_kv* modules = load_modules(&app_config, executable_directory_path);
+    ecs_entity_t mm    = ecs_lookup(context.ecs, "runtime:module_map");
+    ecs_set_id(context.ecs, mm, mm, sizeof(module_kv), &modules);
+
     for(int i = 0; i < shlen(modules); i++) {
         if(NULL != modules[i].value.initialize)
             modules[i].value.initialize(&context);
     }
 
-    ecs_entity_t mm = ecs_lookup(context.ecs, "runtime:module_map");
-    ecs_set_id(context.ecs, mm, mm, sizeof(module_kv), &modules);
-
     const module_kv* mods = *(module_kv**)ecs_get_id(context.ecs, mm, mm);
     for(int i = 0; i < shlen(mods); i++) {
         titus_log_info("INFO: %s", mods[i].key);
+        titus_log_info("INFO: %s", mods[i].value.binary_path);
     }
 
     // titus_timer t = {0};

@@ -18,12 +18,16 @@ target_sources(titus_sdk
             "include/titus/context/context.h"
             "include/titus/ecs/ecs.h"
             "include/titus/log/log.h"
+            "include/titus/module/module.h"
+            "include/titus/sds/sds.h"
             "include/titus/ds/stb_ds.h"
     PRIVATE
-        src/stb_ds.c
         src/sdk.c
         src/ecs.c
         src/log.c
+        src/assets.c
+        src/sds.c
+        src/stb_ds.c
 )
 
 include(GenerateExportHeader)

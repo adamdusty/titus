@@ -33,8 +33,8 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wconversion"
 
-#include "sds/sds.h"
-#include "sds/sdsalloc.h"
+#include "titus/sds/sds.h"
+#include "titus/sds/sdsalloc.h"
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>

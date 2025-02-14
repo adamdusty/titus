@@ -3,8 +3,8 @@
 #include "module/module.h"
 
 #include "assert/assert.h"
-#include "sds/sds.h"
 #include "titus/ds/stb_ds.h"
+#include "titus/sds/sds.h"
 #include <SDL3/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,7 +76,7 @@ SDL_EnumerationResult manifest_callback(void* ud, const char* d, const char* f) 
         titus_log_error("Found module.json (%s), but failed to load", path);
         return SDL_ENUM_CONTINUE;
     }
-    titus_module_load_info li = {.manifest = man, .binary = NULL, .resources = NULL};
+    titus_module_load_info li = {.manifest = man, .binary = NULL, .resources = NULL, .base = sdsnew(d)};
 
     if(li.manifest.binary) {
         li.binary = sdsnew(d);
@@ -252,8 +252,10 @@ titus_module_load_info* titus_get_module_load_info_from_dir(const char* root) {
 titus_module titus_load_module(titus_module_load_info* load_info) {
     TITUS_ASSERT(load_info != NULL); // precondition: NULL load_info
 
-    titus_module module = {0};
-    module.manifest     = load_info->manifest;
+    titus_module module   = {0};
+    module.manifest       = load_info->manifest;
+    module.directory_path = load_info->base;
+    titus_log_info("module directory path: %s", module.directory_path);
 
     if(SDL_GetPathInfo(load_info->binary, NULL)) {
         module.binary_path = load_info->binary;
