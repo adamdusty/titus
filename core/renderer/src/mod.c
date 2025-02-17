@@ -17,12 +17,25 @@ SDL_GPUShaderCreateInfo shader_create_info_from_core_shader(const core_render_sh
                                                             uint32_t uniform_buffers);
 uint8_t* load_spirv(const char* path, size_t* size);
 
+ECS_COMPONENT_DECLARE(core_render_context);
+
+void rendererImport(ecs_world_t* ecs) {
+    ecs_entity_t renderer_module = 0;
+    ecs_component_desc_t desc    = {0};
+    desc.entity                  = renderer_module;
+    ecs_module_init(ecs, "core.renderer", &desc);
+    ecs_set_scope(ecs, renderer_module);
+
+    ECS_COMPONENT_DEFINE(ecs, core_render_context);
+}
+
 CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     titus_log_info("Initializing core:renderer module");
 
-    ecs_entity_t ctx_comp = TITUS_REGISTER_COMPONENT_NAMED(ctx->ecs, "core", "render_context", core_render_context);
+    ecs_import(ctx->ecs, rendererImport, "core.renderer");
+
     ecs_entity_t main_render_context    = ecs_entity(ctx->ecs, {.name = "main_render_context"});
-    core_render_context* render_context = ecs_ensure_id(ctx->ecs, main_render_context, ctx_comp);
+    core_render_context* render_context = ecs_ensure(ctx->ecs, main_render_context, core_render_context);
 
     SDL_GPUDevice* gpu_device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, "vulkan");
     if(NULL == gpu_device) {

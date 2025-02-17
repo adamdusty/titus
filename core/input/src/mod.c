@@ -31,7 +31,7 @@ CORE_EXPORT void titus_initialize(titus_application_context* ctx) {
     // Attach input component to world as singleton
     ecs_set_id(ctx->ecs, comp, comp, sizeof(core_frame_input), &(core_frame_input){.count = 0, .events = {0}});
 
-    ecs_import_c(ctx->ecs, inputImport, "core.input");
+    ecs_import(ctx->ecs, inputImport, "core.input");
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {}
