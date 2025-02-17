@@ -262,7 +262,9 @@ titus_module titus_load_module(titus_module_load_info* load_info) {
         module.handle      = SDL_LoadObject(load_info->binary);
 
         if(NULL == module.handle) {
-            titus_log_error("Failed to load shared object at %s", load_info->binary);
+            titus_log_error("%s", SDL_GetError());
+        } else {
+            titus_log_info("Loaded module binary at: %s", load_info->binary);
         }
     }
 

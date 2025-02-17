@@ -1,7 +1,7 @@
 {
     "namespace": "core",
-    "name": "components",
-    "binary": "components",
+    "name": "core",
+    "binary": "core",
     "version": {
         "major": 0,
         "minor": 1,

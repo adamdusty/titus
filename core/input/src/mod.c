@@ -7,46 +7,32 @@
 void core_input_poll_system(ecs_iter_t* it);
 void process_input(ecs_iter_t* it);
 
-// ECS_COMPONENT_DECLARE(core_frame_input);
+ECS_SYSTEM_DECLARE(core_input_poll_system);
+ECS_SYSTEM_DECLARE(process_input);
+
+extern void coreImport(ecs_world_t* world);
+
+CORE_EXPORT void inputImport(ecs_world_t* ecs) {
+    ECS_MODULE(ecs, input);
+    ecs_entity_t input_module = 0;
+    ecs_component_desc_t desc = {0};
+    desc.entity               = input_module;
+    ecs_module_init(ecs, "core.input", &desc);
+    ecs_set_scope(ecs, input_module);
+
+    ECS_SYSTEM_DEFINE(ecs, core_input_poll_system, EcsPreUpdate, core.core_frame_input);
+    ECS_SYSTEM_DEFINE(ecs, process_input, EcsOnUpdate, core.core_frame_input);
+}
 
 CORE_EXPORT void titus_initialize(titus_application_context* ctx) {
+    titus_log_info("Initializing core:input module");
 
-    ECS_IMPORT(ctx->ecs, core);
-    ecs_entity_t comp = ecs_id(core_frame_input);
-    // ecs_entity_t comp =  ecs_lookup(ctx->ecs, "core:input");
+    ecs_entity_t comp = ecs_lookup(ctx->ecs, "core.core_frame_input");
 
     // Attach input component to world as singleton
     ecs_set_id(ctx->ecs, comp, comp, sizeof(core_frame_input), &(core_frame_input){.count = 0, .events = {0}});
 
-    ecs_system(ctx->ecs,
-               {
-                   .callback = core_input_poll_system,
-                   .entity   = ecs_entity(ctx->ecs,
-                                          {
-                                              .name = "input_polling",
-                                              .add  = ecs_ids(ecs_dependson(EcsPreUpdate)),
-                                        }),
-                   .query.terms =
-                       {
-                           (ecs_term_t){.first.id = comp},
-                           //    {.first.name = "core:input"},
-                       },
-               });
-
-    ecs_system(ctx->ecs,
-               {
-                   .callback = process_input,
-                   .entity   = ecs_entity(ctx->ecs,
-                                          {
-                                              .name = "input_processing",
-                                              .add  = ecs_ids(ecs_dependson(EcsOnUpdate)),
-                                        }),
-                   .query.terms =
-                       {
-                           (ecs_term_t){.first.id = comp},
-                           // {.first.name = "core:input"},
-                       },
-               });
+    ECS_IMPORT(ctx->ecs, input);
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {}

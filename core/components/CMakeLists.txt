@@ -20,10 +20,22 @@ target_sources(core_components
 )
 
 add_library(core_components_module SHARED)
-target_link_libraries(core_components_module PRIVATE core_components)
+target_link_libraries(core_components_module PRIVATE core_components core_input)
 target_sources(core_components_module
+    PUBLIC
+        FILE_SET core_export_header
+        TYPE     HEADERS
+        BASE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/export"
+        FILES
+            "${CMAKE_CURRENT_BINARY_DIR}/export/core/export.h"
+    PUBLIC
+        FILE_SET core_module_headers
+        TYPE HEADERS
+        BASE_DIRS include
+        FILES
+            "include/core/core.h"
     PRIVATE
-        src/components.c
+        src/core.c
 )
 
 configure_file(module.json module.json)
@@ -42,6 +54,6 @@ set_target_properties(
     VISIBILITY_INLINES_HIDDEN YES
     VERSION "${PROJECT_VERSION}"
     SOVERSION "${PROJECT_VERSION_MAJOR}"
-    EXPORT_NAME components
-    OUTPUT_NAME components
+    EXPORT_NAME core
+    OUTPUT_NAME core
 )
