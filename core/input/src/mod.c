@@ -13,7 +13,6 @@ ECS_SYSTEM_DECLARE(process_input);
 extern void coreImport(ecs_world_t* world);
 
 CORE_EXPORT void inputImport(ecs_world_t* ecs) {
-    ECS_MODULE(ecs, input);
     ecs_entity_t input_module = 0;
     ecs_component_desc_t desc = {0};
     desc.entity               = input_module;
@@ -32,7 +31,7 @@ CORE_EXPORT void titus_initialize(titus_application_context* ctx) {
     // Attach input component to world as singleton
     ecs_set_id(ctx->ecs, comp, comp, sizeof(core_frame_input), &(core_frame_input){.count = 0, .events = {0}});
 
-    ECS_IMPORT(ctx->ecs, input);
+    ecs_import_c(ctx->ecs, inputImport, "core.input");
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {}
