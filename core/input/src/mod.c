@@ -10,14 +10,8 @@ void process_input(ecs_iter_t* it);
 ECS_SYSTEM_DECLARE(core_input_poll_system);
 ECS_SYSTEM_DECLARE(process_input);
 
-extern void coreImport(ecs_world_t* world);
-
 CORE_EXPORT void inputImport(ecs_world_t* ecs) {
-    ecs_entity_t input_module = 0;
-    ecs_component_desc_t desc = {0};
-    desc.entity               = input_module;
-    ecs_module_init(ecs, "core.input", &desc);
-    ecs_set_scope(ecs, input_module);
+    ECS_MODULE(ecs, CoreInput);
 
     ECS_SYSTEM_DEFINE(ecs, core_input_poll_system, EcsPreUpdate, core.core_frame_input);
     ECS_SYSTEM_DEFINE(ecs, process_input, EcsOnUpdate, core.core_frame_input);
@@ -26,12 +20,18 @@ CORE_EXPORT void inputImport(ecs_world_t* ecs) {
 CORE_EXPORT void titus_initialize(titus_application_context* ctx) {
     titus_log_info("Initializing core:input module");
 
+    ecs_entity_t mod = ecs_import(ctx->ecs, inputImport, "core.input");
+    if(mod == 0) {
+        titus_log_error("Failed to import core.input module");
+        return;
+    }
+
+    titus_log_info("core.input module imported");
+
     ecs_entity_t comp = ecs_lookup(ctx->ecs, "core.core_frame_input");
 
     // Attach input component to world as singleton
     ecs_set_id(ctx->ecs, comp, comp, sizeof(core_frame_input), &(core_frame_input){.count = 0, .events = {0}});
-
-    ecs_import(ctx->ecs, inputImport, "core.input");
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {}

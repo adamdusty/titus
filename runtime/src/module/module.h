@@ -6,7 +6,6 @@
 #include <titus/module/module.h>
 #include <titus/sdk.h>
 
-
 #define TITUS_MODULE_INITIALIZE "titus_initialize"
 #define TITUS_MODULE_DEINITIALIZE "titus_deinitialize"
 

@@ -38,6 +38,12 @@ int main(int, char*[]) {
 
     titus_application_context context = {0};
     initialize_application_context(&context);
+
+    /* Set up the explorer */
+    ECS_IMPORT(context.ecs, FlecsStats);
+    ecs_singleton_set(context.ecs, EcsRest, {0});
+    /* ******************* */
+
     ECS_COMPONENT(context.ecs, quit_t);
 
     module_kv* modules = load_modules(&app_config, executable_directory_path);
@@ -62,10 +68,10 @@ int main(int, char*[]) {
 
     /* Clean up */
     // Deinit modules in reverse order
-    // for(int i = shlen(modules) - 1; i >= 0; i--) {
-    //     titus_free_module(&modules[i].value);
-    // }
-    // shfree(modules);
+    for(int i = shlen(modules) - 1; i >= 0; i--) {
+        titus_free_module(&modules[i].value);
+    }
+    shfree(modules);
 
     sdsfree(executable_directory_path);
     deinitialize_application_context(&context);
