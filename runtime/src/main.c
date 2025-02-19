@@ -45,12 +45,10 @@ int main(int, char*[]) {
     /* ******************* */
 
     ECS_COMPONENT(context.ecs, quit_t);
-    ecs_set_id(context.ecs, ecs_id(quit_t), ecs_id(quit_t), sizeof(quit_t), &(quit_t){1});
-    // ecs_singleton_set(context.ecs, quit_t, {1});
 
     module_kv* modules = load_modules(&app_config, executable_directory_path);
-    // ecs_entity_t mm    = ecs_lookup(context.ecs, "runtime:module_map");
-    // ecs_set_id(context.ecs, mm, mm, sizeof(module_kv), &modules);
+    ecs_entity_t mm    = ecs_lookup(context.ecs, "runtime:module_map");
+    ecs_set_id(context.ecs, mm, mm, sizeof(module_kv*), &modules);
 
     for(int i = 0; i < shlen(modules); i++) {
         if(NULL != modules[i].value.initialize)
@@ -58,6 +56,7 @@ int main(int, char*[]) {
     }
 
     // titus_timer t = {0};
+    ecs_singleton_set(context.ecs, quit_t, {1});
     while(*ecs_singleton_get(context.ecs, quit_t) != 0) {
         ecs_progress(context.ecs, 0);
     }
@@ -131,14 +130,12 @@ module_kv* load_modules(const titus_config* config, sds executable_directory) {
         exit(EXIT_FAILURE);
     }
 
-    // titus_module* modules = NULL;
     module_kv* module_map = NULL;
     for(int i = 0; i < arrlen(module_load_infos); i++) {
         titus_module mod = titus_load_module(&module_load_infos[i]); // module_load_info gets moved into module here
-        // arrpush(modules, mod);
-        sds key = sdsdup(mod.manifest.namespace);
-        key     = sdscat(key, ":");
-        key     = sdscatsds(key, mod.manifest.name);
+        sds key          = sdsdup(mod.manifest.namespace);
+        key              = sdscat(key, ":");
+        key              = sdscatsds(key, mod.manifest.name);
         shput(module_map, key, mod);
     }
 

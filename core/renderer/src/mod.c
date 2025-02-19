@@ -1,13 +1,10 @@
+#include "context.h"
 #include "core/export.h"
+#include "shaders.h"
 #include <SDL3/SDL.h>
 #include <titus/sdk.h>
 
 static ecs_entity_t core_render_context_id = 0;
-
-typedef struct core_render_context {
-    SDL_Window* window;
-    SDL_GPUDevice* device;
-} core_render_context;
 
 void render_frame(ecs_iter_t* it);
 
@@ -55,6 +52,8 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
 
     SDL_SetGPUSwapchainParameters(
         render_context->device, render_context->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_VSYNC);
+
+    get_default_pipeline_create_info(ctx->ecs, render_context);
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {
