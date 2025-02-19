@@ -17,7 +17,14 @@ target_sources(core_renderer
         FILES
             "${CMAKE_CURRENT_BINARY_DIR}/export/core/export.h"
     PRIVATE
+        FILE_SET core_renderer_headers
+        TYPE     HEADERS
+        BASE_DIRS src
+        FILES
+            src/shaders.h
+    PRIVATE
         src/mod.c
+        src/shaders.c
 )
 
 configure_file(module.json module.json)

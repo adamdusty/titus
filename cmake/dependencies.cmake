@@ -9,7 +9,6 @@ FetchContent_Declare(
     GIT_SHALLOW
     SYSTEM
     EXCLUDE_FROM_ALL
-    FIND_PACKAGE_ARGS
 )
 
 FetchContent_Declare(

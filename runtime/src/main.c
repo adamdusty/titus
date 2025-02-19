@@ -70,6 +70,7 @@ int main(int, char*[]) {
     /* Clean up */
     // Deinit modules in reverse order
     for(int i = shlen(modules) - 1; i >= 0; i--) {
+        titus_log_info("Freeing module: %s", modules[i].key);
         titus_free_module(&modules[i].value);
     }
     shfree(modules);
