@@ -61,7 +61,7 @@ int main(int, char*[]) {
         ecs_progress(context.ecs, 0);
     }
 
-    for(int i = 0; i < arrlen(modules); i++) {
+    for(int i = 0; i < shlen(modules); i++) {
         if(NULL != modules[i].value.deinitialize)
             modules[i].value.deinitialize(&context);
     }
