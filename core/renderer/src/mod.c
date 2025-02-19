@@ -1,14 +1,17 @@
+#include "components.h"
 #include "context.h"
 #include "core/export.h"
 #include "shaders.h"
 #include <SDL3/SDL.h>
 #include <titus/sdk.h>
 
-static ecs_entity_t core_render_context_id = 0;
+static SDL_GPUGraphicsPipeline* default_pipeline = NULL;
+static SDL_GPUBuffer* vertex_buffer              = NULL;
 
 void render_frame(ecs_iter_t* it);
 
 ECS_COMPONENT_DECLARE(core_render_context);
+ECS_COMPONENT_DECLARE(render_mesh);
 ECS_SYSTEM_DECLARE(render_frame);
 
 void rendererImport(ecs_world_t* ecs) {
@@ -16,6 +19,7 @@ void rendererImport(ecs_world_t* ecs) {
     ECS_MODULE(ecs, CoreRenderer);
 
     ECS_COMPONENT_DEFINE(ecs, core_render_context);
+    ECS_COMPONENT_DEFINE(ecs, render_mesh);
 
     ECS_SYSTEM_DEFINE(ecs, render_frame, EcsPostUpdate, core.renderer.core_render_context($));
 }
@@ -53,22 +57,61 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     SDL_SetGPUSwapchainParameters(
         render_context->device, render_context->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_VSYNC);
 
-    get_default_pipeline_create_info(ctx->ecs, render_context);
+    default_pipeline         = create_default_pipeline(ctx->ecs, render_context);
+    vertex_buffer            = SDL_CreateGPUBuffer(render_context->device,
+                                        &(SDL_GPUBufferCreateInfo){
+                                                       .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
+                                                       .size  = sizeof(vertex_position) * 3,
+                                        });
+    vertex_position verts[3] = {
+        {-0.5, -0.5, 0, 1},
+        {0.5, -0.5, 0, 1},
+        {0, 0.5, 0, 1},
+    };
+
+    SDL_GPUTransferBuffer* transfer = SDL_CreateGPUTransferBuffer(render_context->device,
+                                                                  &(SDL_GPUTransferBufferCreateInfo){
+                                                                      .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
+                                                                      .size  = sizeof(vertex_position) * 3,
+                                                                  });
+
+    vertex_position* transfer_data = SDL_MapGPUTransferBuffer(render_context->device, transfer, false);
+    transfer_data[0]               = verts[0];
+    transfer_data[1]               = verts[1];
+    transfer_data[2]               = verts[2];
+    SDL_UnmapGPUTransferBuffer(render_context->device, transfer);
+
+    SDL_GPUCommandBuffer* upload = SDL_AcquireGPUCommandBuffer(render_context->device);
+    SDL_GPUCopyPass* copy        = SDL_BeginGPUCopyPass(upload);
+    SDL_UploadToGPUBuffer(copy,
+                          &(SDL_GPUTransferBufferLocation){.transfer_buffer = transfer, .offset = 0},
+                          &(SDL_GPUBufferRegion){
+                              .buffer = vertex_buffer,
+                              .offset = 0,
+                              .size   = sizeof(vertex_position) * 3,
+                          },
+                          false);
+    SDL_EndGPUCopyPass(copy);
+    SDL_SubmitGPUCommandBuffer(upload);
+    SDL_ReleaseGPUTransferBuffer(render_context->device, transfer);
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {
     titus_log_info("Deinitializing core.renderer");
 
     const core_render_context* rend = ecs_singleton_get(ctx->ecs, core_render_context);
+    SDL_ReleaseGPUGraphicsPipeline(rend->device, default_pipeline);
     SDL_DestroyGPUDevice(rend->device);
 }
 
 void render_frame(ecs_iter_t* it) {
     core_render_context* ctx = ecs_field(it, core_render_context, 0);
+    // render_mesh* mesh        = ecs_field(it, render_mesh, 0);
 
     SDL_Window* win    = ctx->window;
     SDL_GPUDevice* dev = ctx->device;
 
+    // for(int i = 0; i < it->count; i++) {
     SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(dev);
     if(cmdbuf == NULL) {
         titus_log_error("AcquireGPUCommandBuffer failed: %s", SDL_GetError());
@@ -89,10 +132,16 @@ void render_frame(ecs_iter_t* it) {
         colorTargetInfo.store_op               = SDL_GPU_STOREOP_DONT_CARE;
 
         SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
+
+        SDL_BindGPUGraphicsPipeline(renderPass, default_pipeline);
+        SDL_BindGPUVertexBuffers(renderPass, 0, &(SDL_GPUBufferBinding){.buffer = vertex_buffer, .offset = 0}, 1);
+        SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
+
         SDL_EndGPURenderPass(renderPass);
     }
 
     SDL_SubmitGPUCommandBuffer(cmdbuf);
+    // }
 
     return;
 }

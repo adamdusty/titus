@@ -10,5 +10,5 @@ typedef struct core_render_shader {
 } core_render_shader;
 
 typedef struct core_render_material {
-    SDL_GPUGraphicsPipelineCreateInfo pipeline_create_info;
+    size_t id;
 } core_render_material;
