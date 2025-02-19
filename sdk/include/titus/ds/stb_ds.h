@@ -386,7 +386,13 @@ CREDITS
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wconversion"
+#pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 
 #ifdef STBDS_UNIT_TESTS
 #define _CRT_SECURE_NO_WARNINGS
@@ -1966,4 +1972,5 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ------------------------------------------------------------------------------
 */
 
-#pragma clang diagnostic push
+#pragma clang diagnostic pop
+#pragma GCC diagnostic pop

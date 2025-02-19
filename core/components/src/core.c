@@ -9,7 +9,10 @@ ECS_COMPONENT_DECLARE(core_render_material);
 ECS_COMPONENT_DECLARE(core_frame_input);
 
 CORE_EXPORT void coreImport(ecs_world_t* ecs) {
+    titus_log_info("Importing the core module");
+
     ECS_MODULE(ecs, core);
+    titus_log_info("Module registered");
 
     ECS_COMPONENT_DEFINE(ecs, core_frame_input);
     ECS_COMPONENT_DEFINE(ecs, core_render_material);

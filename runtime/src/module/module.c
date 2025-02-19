@@ -13,7 +13,7 @@
 
 #ifdef __linux__
 #define SHARED_OBJECT_FILE_EXT "so"
-#elifdef _WIN32
+#elif defined(_WIN32)
 #define SHARED_OBJECT_FILE_EXT "dll"
 #endif
 
@@ -171,7 +171,7 @@ bool titus_parse_manifest(char* data, size_t len, titus_module_manifest* out) {
         size_t col  = 0;
         size_t ch   = 0;
         if(yyjson_locate_pos(data, len, err.pos, &line, &col, &ch)) {
-            titus_log_error("%s: [%llu: %llu]", err.msg, line, col);
+            titus_log_error("%s: [%zu: %zu]", err.msg, line, col);
         }
         return false;
     }
@@ -257,6 +257,7 @@ titus_module titus_load_module(titus_module_load_info* load_info) {
     module.directory_path = load_info->base;
     titus_log_info("module directory path: %s", module.directory_path);
 
+    titus_log_info("Attempting to load binary from: %s", load_info->binary);
     if(SDL_GetPathInfo(load_info->binary, NULL)) {
         module.binary_path = load_info->binary;
         module.handle      = SDL_LoadObject(load_info->binary);

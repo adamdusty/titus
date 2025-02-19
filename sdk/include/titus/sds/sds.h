@@ -32,6 +32,9 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wconversion"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
 
 #ifndef __SDS_H
 #define __SDS_H
@@ -41,6 +44,7 @@ extern const char* SDS_NOINIT;
 
 #include "titus/export.h"
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
 

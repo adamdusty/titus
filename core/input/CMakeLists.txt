@@ -1,8 +1,13 @@
+project(
+    core-input
+    VERSION 0.1.0
+)
+
 if(NOT TARGET titus::sdk)
 find_package(titus CONFIG REQUIRED)
 endif(NOT TARGET titus::sdk)
 
-add_library(core_input SHARED)
+add_library(core_input MODULE)
 target_link_libraries(core_input PRIVATE titus::sdk core_components)
 target_sources(core_input
     PUBLIC
@@ -31,6 +36,7 @@ set_target_properties(
     VISIBILITY_INLINES_HIDDEN YES
     VERSION "${PROJECT_VERSION}"
     SOVERSION "${PROJECT_VERSION_MAJOR}"
+    PREFIX ""
     EXPORT_NAME input
     OUTPUT_NAME input
 )

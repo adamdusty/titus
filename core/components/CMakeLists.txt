@@ -1,3 +1,8 @@
+project(
+    core-components
+    VERSION 0.1.0
+)
+
 if(NOT TARGET titus::sdk)
 find_package(titus CONFIG REQUIRED)
 endif(NOT TARGET titus::sdk)
@@ -19,8 +24,9 @@ target_sources(core_components
             "include/core/components.h"
 )
 
-add_library(core_components_module SHARED)
-target_link_libraries(core_components_module PRIVATE core_components core_input)
+add_library(core_components_module MODULE)
+target_link_libraries(core_components_module PRIVATE core_components)
+target_compile_options(core_components_module PRIVATE ${DEBUG_COMPILER_FLAGS})
 target_sources(core_components_module
     PUBLIC
         FILE_SET core_export_header
@@ -53,7 +59,9 @@ set_target_properties(
     CXX_VISIBILITY_PRESET "hidden"
     VISIBILITY_INLINES_HIDDEN YES
     VERSION "${PROJECT_VERSION}"
-    SOVERSION "${PROJECT_VERSION_MAJOR}"
+    # SOVERSION "1"
+    # SOVERSION "${PROJECT_VERSION_MAJOR}"
+    PREFIX ""
     EXPORT_NAME core
     OUTPUT_NAME core
 )

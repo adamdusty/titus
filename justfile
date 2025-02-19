@@ -4,8 +4,13 @@ alias b := build
 alias c := configure
 alias p := packaged
 
+[windows]
 build:
     (Measure-Command {Start-Process "cmake" -ArgumentList "--build --preset dev" -Wait -NoNewWindow}).TotalSeconds
+
+[linux]
+build:
+    time cmake --build --preset dev
 
 configure:
     cmake --preset dev

@@ -11,6 +11,6 @@ target_sources(titus_lib
 
 
 add_executable(titus_rt)
-target_compile_options(titus_rt PRIVATE ${DEBUG_COMPILER_FLAGS} -glldb)
+target_compile_options(titus_rt PRIVATE ${DEBUG_COMPILER_FLAGS})
 target_link_libraries(titus_rt titus_lib)
 target_sources(titus_rt PRIVATE src/main.c)

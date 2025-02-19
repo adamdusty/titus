@@ -45,10 +45,12 @@ int main(int, char*[]) {
     /* ******************* */
 
     ECS_COMPONENT(context.ecs, quit_t);
+    ecs_set_id(context.ecs, ecs_id(quit_t), ecs_id(quit_t), sizeof(quit_t), &(quit_t){1});
+    // ecs_singleton_set(context.ecs, quit_t, {1});
 
     module_kv* modules = load_modules(&app_config, executable_directory_path);
-    ecs_entity_t mm    = ecs_lookup(context.ecs, "runtime:module_map");
-    ecs_set_id(context.ecs, mm, mm, sizeof(module_kv), &modules);
+    // ecs_entity_t mm    = ecs_lookup(context.ecs, "runtime:module_map");
+    // ecs_set_id(context.ecs, mm, mm, sizeof(module_kv), &modules);
 
     for(int i = 0; i < shlen(modules); i++) {
         if(NULL != modules[i].value.initialize)
@@ -56,7 +58,6 @@ int main(int, char*[]) {
     }
 
     // titus_timer t = {0};
-    ecs_singleton_set(context.ecs, quit_t, {1});
     while(*ecs_singleton_get(context.ecs, quit_t) != 0) {
         ecs_progress(context.ecs, 0);
     }

@@ -1,8 +1,13 @@
+project(
+    core-renderer
+    VERSION 0.1.0
+)
+
 if(NOT TARGET titus::sdk)
 find_package(titus CONFIG REQUIRED)
 endif(NOT TARGET titus::sdk)
 
-add_library(core_renderer SHARED)
+add_library(core_renderer MODULE)
 target_link_libraries(core_renderer PRIVATE titus::sdk core_components)
 target_sources(core_renderer
     PUBLIC
@@ -31,6 +36,7 @@ set_target_properties(
     VISIBILITY_INLINES_HIDDEN YES
     VERSION "${PROJECT_VERSION}"
     SOVERSION "${PROJECT_VERSION_MAJOR}"
+    PREFIX ""
     EXPORT_NAME renderer
     OUTPUT_NAME renderer
 )
