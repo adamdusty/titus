@@ -7,15 +7,19 @@
 //     SDL_GPUGraphicsPipeline* pipeline;
 // } core_render_pipeline;
 
-typedef struct vertex_position {
+typedef struct vertex_position_color {
     float x;
     float y;
     float z;
     float w;
-} vertex_position;
+    float r;
+    float g;
+    float b;
+    float a;
+} vertex_position_color;
 
 typedef struct render_mesh {
-    vertex_position vertices[3];
+    vertex_position_color vertices[3];
 } render_mesh;
 
 extern ECS_COMPONENT_DECLARE(core_render_pipeline);

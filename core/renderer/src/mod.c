@@ -57,28 +57,31 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     SDL_SetGPUSwapchainParameters(
         render_context->device, render_context->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_VSYNC);
 
-    default_pipeline         = create_default_pipeline(ctx->ecs, render_context);
-    vertex_buffer            = SDL_CreateGPUBuffer(render_context->device,
+    default_pipeline               = create_default_pipeline(ctx->ecs, render_context);
+    vertex_buffer                  = SDL_CreateGPUBuffer(render_context->device,
                                         &(SDL_GPUBufferCreateInfo){
-                                                       .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
-                                                       .size  = sizeof(vertex_position) * 3,
+                                                             .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
+                                                             .size  = sizeof(vertex_position_color) * 4,
                                         });
-    vertex_position verts[3] = {
-        {-0.5, -0.5, 0, 1},
-        {0.5, -0.5, 0, 1},
-        {0, 0.5, 0, 1},
+    vertex_position_color verts[4] = {
+        {-0.5, -0.5, 0, 1, 1.0, 0, 0, 1.0},
+        {0.5, -0.5, 0, 1, 0, 1.0, 0, 1.0},
+        {-0.5, 0.5, 0, 1, 0, 0, 1.0, 1.0},
+        {0.5, 0.5, 0, 1, 0, 0, 1.0, 1.0},
     };
 
     SDL_GPUTransferBuffer* transfer = SDL_CreateGPUTransferBuffer(render_context->device,
                                                                   &(SDL_GPUTransferBufferCreateInfo){
                                                                       .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
-                                                                      .size  = sizeof(vertex_position) * 3,
+                                                                      .size  = sizeof(vertex_position_color) * 4,
                                                                   });
 
-    vertex_position* transfer_data = SDL_MapGPUTransferBuffer(render_context->device, transfer, false);
-    transfer_data[0]               = verts[0];
-    transfer_data[1]               = verts[1];
-    transfer_data[2]               = verts[2];
+    vertex_position_color* transfer_data = SDL_MapGPUTransferBuffer(render_context->device, transfer, false);
+
+    transfer_data[0] = verts[0];
+    transfer_data[1] = verts[1];
+    transfer_data[2] = verts[2];
+    transfer_data[3] = verts[3];
     SDL_UnmapGPUTransferBuffer(render_context->device, transfer);
 
     SDL_GPUCommandBuffer* upload = SDL_AcquireGPUCommandBuffer(render_context->device);
@@ -88,7 +91,7 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
                           &(SDL_GPUBufferRegion){
                               .buffer = vertex_buffer,
                               .offset = 0,
-                              .size   = sizeof(vertex_position) * 3,
+                              .size   = sizeof(vertex_position_color) * 4,
                           },
                           false);
     SDL_EndGPUCopyPass(copy);
@@ -135,7 +138,7 @@ void render_frame(ecs_iter_t* it) {
 
         SDL_BindGPUGraphicsPipeline(renderPass, default_pipeline);
         SDL_BindGPUVertexBuffers(renderPass, 0, &(SDL_GPUBufferBinding){.buffer = vertex_buffer, .offset = 0}, 1);
-        SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
+        SDL_DrawGPUPrimitives(renderPass, 4, 1, 0, 0);
 
         SDL_EndGPURenderPass(renderPass);
     }

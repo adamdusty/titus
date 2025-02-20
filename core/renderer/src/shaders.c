@@ -58,26 +58,30 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
 
     SDL_GPUGraphicsPipelineCreateInfo ci = {0};
 
-    ci.vertex_shader      = vert_shader; // TODO: impl
-    ci.fragment_shader    = frag_shader; // TODO: impl
+    ci.vertex_shader      = vert_shader;
+    ci.fragment_shader    = frag_shader;
     ci.vertex_input_state = (SDL_GPUVertexInputState){
         .num_vertex_buffers = 1,
         .vertex_buffer_descriptions =
             (SDL_GPUVertexBufferDescription[]){
                 (SDL_GPUVertexBufferDescription){
                     .slot               = 0,
-                    .pitch              = sizeof(float) * 4,
+                    .pitch              = sizeof(vertex_position_color),
                     .input_rate         = SDL_GPU_VERTEXINPUTRATE_VERTEX,
                     .instance_step_rate = 0,
                 },
             },
-        .num_vertex_attributes = 1,
+        .num_vertex_attributes = 2,
         .vertex_attributes =
             (SDL_GPUVertexAttribute[]){
                 {.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4, .location = 0, .offset = 0, .buffer_slot = 0},
+                {.format      = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,
+                 .location    = 1,
+                 .offset      = sizeof(float) * 4,
+                 .buffer_slot = 0},
             },
     };
-    ci.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+    ci.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP;
 
     ci.rasterizer_state           = (SDL_GPURasterizerState){0};
     ci.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
