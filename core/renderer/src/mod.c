@@ -10,6 +10,10 @@ static SDL_GPUBuffer* vertex_buffer              = NULL;
 
 void render_frame(ecs_iter_t* it);
 
+SDL_FColor from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    return (SDL_FColor){.r = r / 255.0f, .g = g / 255.0f, .b = b / 255.0f, .a = a / 255.0f};
+}
+
 ECS_COMPONENT_DECLARE(core_render_context);
 ECS_COMPONENT_DECLARE(render_mesh);
 ECS_SYSTEM_DECLARE(render_frame);
@@ -130,7 +134,7 @@ void render_frame(ecs_iter_t* it) {
     if(swapchainTexture != NULL) {
         SDL_GPUColorTargetInfo colorTargetInfo = {0};
         colorTargetInfo.texture                = swapchainTexture;
-        colorTargetInfo.clear_color            = (SDL_FColor){0.3f, 0.4f, 0.5f, 1.0f};
+        colorTargetInfo.clear_color            = from_rgba(100, 149, 237, 255); // cornflower blue
         colorTargetInfo.load_op                = SDL_GPU_LOADOP_CLEAR;
         colorTargetInfo.store_op               = SDL_GPU_STOREOP_DONT_CARE;
 
