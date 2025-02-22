@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL.h>
 
-typedef struct core_frame_input {
+typedef struct Core_FrameInput {
     size_t count;
     SDL_Event events[255];
-} core_frame_input;
+} Core_FrameInput;

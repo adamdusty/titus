@@ -17,7 +17,7 @@ target_sources(core_input
         FILES
             "${CMAKE_CURRENT_BINARY_DIR}/export/core/export.h"
     PRIVATE
-        src/mod.c
+        src/input.c
 )
 
 configure_file(module.json module.json)

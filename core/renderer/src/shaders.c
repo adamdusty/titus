@@ -1,6 +1,6 @@
 #include "shaders.h"
 
-#include "components.h"
+#include <core/components.h>
 #include <titus/sdk.h>
 
 uint8_t* load_spirv(const char* path, size_t* size) {
@@ -45,19 +45,15 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
             (SDL_GPUVertexBufferDescription[]){
                 (SDL_GPUVertexBufferDescription){
                     .slot               = 0,
-                    .pitch              = sizeof(vertex_position_color),
+                    .pitch              = sizeof(Core_VertexPosition),
                     .input_rate         = SDL_GPU_VERTEXINPUTRATE_VERTEX,
                     .instance_step_rate = 0,
                 },
             },
-        .num_vertex_attributes = 2,
+        .num_vertex_attributes = 1,
         .vertex_attributes =
             (SDL_GPUVertexAttribute[]){
-                {.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4, .location = 0, .offset = 0, .buffer_slot = 0},
-                {.format      = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,
-                 .location    = 1,
-                 .offset      = sizeof(float) * 4,
-                 .buffer_slot = 0},
+                {.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3, .location = 0, .offset = 0, .buffer_slot = 0},
             },
     };
     ci.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP;

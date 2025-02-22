@@ -3,10 +3,13 @@
 #include "core/export.h"
 #include "shaders.h"
 #include <SDL3/SDL.h>
+#include <core/components.h>
 #include <titus/sdk.h>
 
 static SDL_GPUGraphicsPipeline* default_pipeline = NULL;
 static SDL_GPUBuffer* vertex_buffer              = NULL;
+static ecs_query_t* camera_query                 = NULL;
+static ecs_query_t* mesh_query                   = NULL;
 
 void render_frame(ecs_iter_t* it);
 
@@ -15,7 +18,6 @@ SDL_FColor from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 }
 
 ECS_COMPONENT_DECLARE(core_render_context);
-ECS_COMPONENT_DECLARE(render_mesh);
 ECS_SYSTEM_DECLARE(render_frame);
 
 void rendererImport(ecs_world_t* ecs) {
@@ -23,7 +25,6 @@ void rendererImport(ecs_world_t* ecs) {
     ECS_MODULE(ecs, CoreRenderer);
 
     ECS_COMPONENT_DEFINE(ecs, core_render_context);
-    ECS_COMPONENT_DEFINE(ecs, render_mesh);
 
     ECS_SYSTEM_DEFINE(ecs, render_frame, EcsPostUpdate, core.renderer.core_render_context($));
 }
@@ -61,26 +62,26 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     SDL_SetGPUSwapchainParameters(
         render_context->device, render_context->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_VSYNC);
 
-    default_pipeline               = create_default_pipeline(ctx->ecs, render_context);
-    vertex_buffer                  = SDL_CreateGPUBuffer(render_context->device,
+    default_pipeline             = create_default_pipeline(ctx->ecs, render_context);
+    vertex_buffer                = SDL_CreateGPUBuffer(render_context->device,
                                         &(SDL_GPUBufferCreateInfo){
-                                                             .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
-                                                             .size  = sizeof(vertex_position_color) * 4,
+                                                           .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
+                                                           .size  = sizeof(Core_VertexPosition) * 4,
                                         });
-    vertex_position_color verts[4] = {
-        {-0.5, -0.5, 0, 1, 1.0, 0, 0, 1.0},
-        {0.5, -0.5, 0, 1, 0, 1.0, 0, 1.0},
-        {-0.5, 0.5, 0, 1, 0, 0, 1.0, 1.0},
-        {0.5, 0.5, 0, 1, 0, 0, 1.0, 1.0},
+    Core_VertexPosition verts[4] = {
+        {-0.5, -0.5, 0},
+        {0.5, -0.5, 0},
+        {-0.5, 0.5, 0},
+        {0.5, 0.5, 0},
     };
 
     SDL_GPUTransferBuffer* transfer = SDL_CreateGPUTransferBuffer(render_context->device,
                                                                   &(SDL_GPUTransferBufferCreateInfo){
                                                                       .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
-                                                                      .size  = sizeof(vertex_position_color) * 4,
+                                                                      .size  = sizeof(Core_VertexPosition) * 4,
                                                                   });
 
-    vertex_position_color* transfer_data = SDL_MapGPUTransferBuffer(render_context->device, transfer, false);
+    Core_VertexPosition* transfer_data = SDL_MapGPUTransferBuffer(render_context->device, transfer, false);
 
     transfer_data[0] = verts[0];
     transfer_data[1] = verts[1];
@@ -95,7 +96,7 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
                           &(SDL_GPUBufferRegion){
                               .buffer = vertex_buffer,
                               .offset = 0,
-                              .size   = sizeof(vertex_position_color) * 4,
+                              .size   = sizeof(Core_VertexPosition) * 4,
                           },
                           false);
     SDL_EndGPUCopyPass(copy);
@@ -106,8 +107,11 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     vec3f* capsule = core_capsule_mesh_positions(8, 32, 10, 10, &sz);
 
     for(size_t i = 0; i < sz; ++i) {
-        titus_log_info("[%f, %f, %f]", capsule[i].x, capsule[i].y, capsule[i].z);
+        // titus_log_info("[%f, %f, %f]", capsule[i].x, capsule[i].y, capsule[i].z);
     }
+
+    camera_query = ecs_query(ctx->ecs, {.expr = "[in] core.Core_Camera", .cache_kind = EcsQueryCacheAuto});
+    camera_query = ecs_query(ctx->ecs, {.expr = "[in] core.Core_Mesh", .cache_kind = EcsQueryCacheAuto});
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {
@@ -120,12 +124,18 @@ CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {
 
 void render_frame(ecs_iter_t* it) {
     core_render_context* ctx = ecs_field(it, core_render_context, 0);
-    // render_mesh* mesh        = ecs_field(it, render_mesh, 0);
+
+    ecs_iter_t camera_it = ecs_query_iter(it->world, camera_query);
 
     SDL_Window* win    = ctx->window;
     SDL_GPUDevice* dev = ctx->device;
 
-    // for(int i = 0; i < it->count; i++) {
+    // Render scene from every camera view
+    while(ecs_query_next(&camera_it)) {
+
+        // Render every mesh
+    }
+
     SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(dev);
     if(cmdbuf == NULL) {
         titus_log_error("AcquireGPUCommandBuffer failed: %s", SDL_GetError());
@@ -155,7 +165,6 @@ void render_frame(ecs_iter_t* it) {
     }
 
     SDL_SubmitGPUCommandBuffer(cmdbuf);
-    // }
 
     return;
 }
