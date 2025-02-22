@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/export.h>
+#include <flecs.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <titus/linalg/vec.h>
