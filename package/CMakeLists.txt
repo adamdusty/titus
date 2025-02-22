@@ -26,6 +26,6 @@ function(ADD_MODULE module_name module_target has_resources)
     endif(has_resources)
 endfunction(ADD_MODULE module_name module_target)
 
-ADD_MODULE("core-core" core_components_module FALSE)
+ADD_MODULE("core-core" core_module FALSE)
 ADD_MODULE("core-input" core_input FALSE)
 ADD_MODULE("core-renderer" core_renderer TRUE)
