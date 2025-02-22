@@ -22,6 +22,8 @@ target_sources(core_headers
         BASE_DIRS include
         FILES
             "include/core/components.h"
+            "include/core/input.h"
+            "include/core/rendering.h"
 )
 
 add_library(core_module MODULE)

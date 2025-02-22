@@ -21,6 +21,7 @@ target_sources(titus_sdk
             "include/titus/module/module.h"
             "include/titus/sds/sds.h"
             "include/titus/ds/stb_ds.h"
+            "include/titus/linalg/vec.h"
     PRIVATE
         src/sdk.c
         src/ecs.c

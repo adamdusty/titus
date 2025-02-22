@@ -23,7 +23,7 @@ target_sources(core_renderer
         FILES
             src/shaders.h
     PRIVATE
-        src/mod.c
+        src/renderer.c
         src/shaders.c
 )
 

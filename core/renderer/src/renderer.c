@@ -101,6 +101,13 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     SDL_EndGPUCopyPass(copy);
     SDL_SubmitGPUCommandBuffer(upload);
     SDL_ReleaseGPUTransferBuffer(render_context->device, transfer);
+
+    size_t sz      = 0;
+    vec3f* capsule = core_capsule_mesh_positions(8, 32, 10, 10, &sz);
+
+    for(size_t i = 0; i < sz; ++i) {
+        titus_log_info("[%f, %f, %f]", capsule[i].x, capsule[i].y, capsule[i].z);
+    }
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {

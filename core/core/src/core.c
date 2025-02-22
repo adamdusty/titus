@@ -2,11 +2,12 @@
 
 #include "core/export.h"
 #include "core/input.h"
-#include "core/renderer.h"
+#include "core/rendering.h"
 #include <titus/sdk.h>
 
-ECS_COMPONENT_DECLARE(core_render_material);
+// ECS_COMPONENT_DECLARE(core_render_material);
 ECS_COMPONENT_DECLARE(core_frame_input);
+ECS_COMPONENT_DECLARE(Core_Mesh);
 
 CORE_EXPORT void coreImport(ecs_world_t* ecs) {
     titus_log_info("Importing the core module");
@@ -14,7 +15,7 @@ CORE_EXPORT void coreImport(ecs_world_t* ecs) {
     ECS_MODULE(ecs, core);
 
     ECS_COMPONENT_DEFINE(ecs, core_frame_input);
-    ECS_COMPONENT_DEFINE(ecs, core_render_material);
+    // ECS_COMPONENT_DEFINE(ecs, core_render_material);
 
     titus_log_info("Core module imported");
 }
