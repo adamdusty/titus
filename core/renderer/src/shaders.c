@@ -45,7 +45,7 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
             (SDL_GPUVertexBufferDescription[]){
                 (SDL_GPUVertexBufferDescription){
                     .slot               = 0,
-                    .pitch              = sizeof(Core_VertexPosition),
+                    .pitch              = sizeof(CoreVertexPosition),
                     .input_rate         = SDL_GPU_VERTEXINPUTRATE_VERTEX,
                     .instance_step_rate = 0,
                 },

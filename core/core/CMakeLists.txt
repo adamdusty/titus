@@ -44,6 +44,7 @@ target_sources(core_module
             "include/core/core.h"
     PRIVATE
         src/core.c
+        src/rendering.c
 )
 
 configure_file(module.json module.json)

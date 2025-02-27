@@ -1,6 +1,7 @@
 #include "core/export.h"
 #include <SDL3/SDL.h>
 #include <core/components.h>
+#include <core/core.h>
 #include <flecs.h>
 #include <titus/sdk.h>
 
@@ -13,8 +14,8 @@ ECS_SYSTEM_DECLARE(process_input);
 CORE_EXPORT void inputImport(ecs_world_t* ecs) {
     ECS_MODULE(ecs, CoreInput);
 
-    ECS_SYSTEM_DEFINE(ecs, core_input_poll_system, EcsPreUpdate, core.Core_FrameInput);
-    ECS_SYSTEM_DEFINE(ecs, process_input, EcsOnUpdate, core.Core_FrameInput);
+    ECS_SYSTEM_DEFINE(ecs, core_input_poll_system, EcsPreUpdate, core.CoreFrameInput);
+    ECS_SYSTEM_DEFINE(ecs, process_input, EcsOnUpdate, core.CoreFrameInput);
 }
 
 CORE_EXPORT void titus_initialize(titus_application_context* ctx) {
@@ -28,16 +29,14 @@ CORE_EXPORT void titus_initialize(titus_application_context* ctx) {
 
     titus_log_info("core.input module imported");
 
-    ecs_entity_t comp = ecs_lookup(ctx->ecs, "core.Core_FrameInput");
-
     // Attach input component to world as singleton
-    ecs_set_id(ctx->ecs, comp, comp, sizeof(Core_FrameInput), &(Core_FrameInput){.count = 0, .events = {0}});
+    ecs_singleton_set(ctx->ecs, CoreFrameInput, {.count = 0, .events = {0}});
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {}
 
 void core_input_poll_system(ecs_iter_t* it) {
-    Core_FrameInput* inp = ecs_field(it, Core_FrameInput, 0);
+    CoreFrameInput* inp = ecs_field(it, CoreFrameInput, 0);
 
     memset(inp->events, 0, 255 * sizeof(SDL_Event));
 
@@ -52,7 +51,7 @@ void core_input_poll_system(ecs_iter_t* it) {
 }
 
 void process_input(ecs_iter_t* it) {
-    Core_FrameInput* fi = ecs_field(it, Core_FrameInput, 0);
+    CoreFrameInput* fi = ecs_field(it, CoreFrameInput, 0);
 
     ecs_entity_t q         = ecs_lookup(it->world, "quit_t");
     const EcsComponent* qc = ecs_get_id(it->world, q, ecs_id(EcsComponent));

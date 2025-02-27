@@ -12,7 +12,7 @@ static SDL_GPUBuffer* vertex_buffer              = NULL;
 static ecs_query_t* camera_query                 = NULL;
 static ecs_query_t* mesh_query                   = NULL;
 
-void upload_vertex_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const Core_Mesh* mesh);
+void upload_vertex_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const CoreMesh* mesh);
 void render_frame(ecs_iter_t* it);
 
 SDL_FColor from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
@@ -71,36 +71,33 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     vertex_buffer    = SDL_CreateGPUBuffer(render_context->device,
                                         &(SDL_GPUBufferCreateInfo){
                                                .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
-                                               .size  = sizeof(Core_VertexPosition) * capsule_size,
+                                               .size  = sizeof(CoreVertexPosition) * capsule_size,
                                         });
 
-    // Core_Mesh test_mesh    = {0};
+    // CoreMesh test_mesh    = {0};
     // test_mesh.vertices     = verts;
     // test_mesh.vertex_count = 4;
 
-    camera_query = ecs_query(ctx->ecs, {.expr = "[in] core.Core_Camera", .cache_kind = EcsQueryCacheAuto});
-    mesh_query   = ecs_query(ctx->ecs, {.expr = "[in] core.Core_Mesh", .cache_kind = EcsQueryCacheAuto});
+    camera_query = ecs_query(ctx->ecs, {.expr = "[in] core.CoreCamera", .cache_kind = EcsQueryCacheAuto});
+    mesh_query   = ecs_query(ctx->ecs, {.expr = "[in] core.CoreMesh", .cache_kind = EcsQueryCacheAuto});
 
-    ecs_entity_t camera_component = ecs_lookup(ctx->ecs, "core.Core_Camera");
-    ecs_entity_t cam              = ecs_entity(ctx->ecs, {.name = "main_camera"});
-    ecs_set_id(ctx->ecs,
-               cam,
-               camera_component,
-               sizeof(Core_Camera),
-               &(Core_Camera){
-                   .up       = {0, 1.0f, 0},
-                   .forward  = {0, 0, 1.0f},
-                   .position = {0, 0, 0},
-               });
+    ecs_entity_t cam = ecs_entity(ctx->ecs, {.name = "main_camera"});
+    ecs_set(ctx->ecs,
+            cam,
+            CoreCamera,
+            {
+                .up       = {0, 1.0f, 0},
+                .forward  = {0, 0, 1.0f},
+                .position = {0, 0, 0},
+            });
 
-    ecs_entity_t mesh_component = ecs_lookup(ctx->ecs, "core.Core_Mesh");
-    ecs_entity_t test_e         = ecs_entity(ctx->ecs, {.name = "test_mesh"});
-    Core_Mesh* test_mesh        = ecs_ensure_id(ctx->ecs, test_e, mesh_component);
-    test_mesh->vertices         = malloc(sizeof(Core_VertexPosition) * capsule_size);
-    SDL_memset(test_mesh->vertices, 0, sizeof(Core_VertexPosition) * capsule_size);
+    ecs_entity_t test_e = ecs_entity(ctx->ecs, {.name = "test_mesh"});
+    CoreMesh* test_mesh = ecs_ensure(ctx->ecs, test_e, CoreMesh);
+    test_mesh->vertices = malloc(sizeof(CoreVertexPosition) * capsule_size);
+    SDL_memset(test_mesh->vertices, 0, sizeof(CoreVertexPosition) * capsule_size);
 
     for(size_t i = 0; i < capsule_size; ++i) {
-        test_mesh->vertices[i] = (Core_VertexPosition){capsule[i].x, capsule[i].y, capsule[i].z};
+        test_mesh->vertices[i] = (CoreVertexPosition){capsule[i].x, capsule[i].y, capsule[i].z};
     }
 
     test_mesh->vertex_count = capsule_size;
@@ -142,7 +139,7 @@ void render_frame(ecs_iter_t* it) {
             return;
         }
 
-        Core_Camera* camera = ecs_field(&camera_it, Core_Camera, 0);
+        CoreCamera* camera = ecs_field(&camera_it, CoreCamera, 0);
 
         SDL_GPUColorTargetInfo colorTargetInfo = {0};
         colorTargetInfo.texture                = swapchainTexture;
@@ -156,7 +153,7 @@ void render_frame(ecs_iter_t* it) {
 
             // Render every mesh
             while(ecs_query_next(&mesh_it)) {
-                Core_Mesh* mesh = ecs_field(&mesh_it, Core_Mesh, 0);
+                CoreMesh* mesh = ecs_field(&mesh_it, CoreMesh, 0);
 
                 for(int j = 0; j < mesh_it.count; j++) {
                     upload_vertex_data(ctx, vertex_buffer, &mesh[j]);
@@ -177,7 +174,7 @@ void render_frame(ecs_iter_t* it) {
     return;
 }
 
-void upload_vertex_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const Core_Mesh* mesh) {
+void upload_vertex_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const CoreMesh* mesh) {
     SDL_GPUTransferBuffer* transfer =
         SDL_CreateGPUTransferBuffer(ctx->device,
                                     &(SDL_GPUTransferBufferCreateInfo){
@@ -185,7 +182,7 @@ void upload_vertex_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const C
                                         .size  = sizeof(mesh->vertices[0]) * mesh->vertex_count,
                                     });
 
-    Core_VertexPosition* transfer_data = SDL_MapGPUTransferBuffer(ctx->device, transfer, false);
+    CoreVertexPosition* transfer_data = SDL_MapGPUTransferBuffer(ctx->device, transfer, false);
 
     for(size_t i = 0; i < mesh->vertex_count; i++) {
         transfer_data[i] = mesh->vertices[i];
