@@ -6,6 +6,8 @@ target_sources(titus_lib
     PRIVATE
         src/config/config.c
         src/module/module.c
+        $<$<PLATFORM_ID:Linux>:src/module/module.linux.c>
+        $<$<PLATFORM_ID:Windows>:src/module/module.windows.c>
         src/error/error.c
 )
 

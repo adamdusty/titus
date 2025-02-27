@@ -3,6 +3,7 @@
 #include "shaders.h"
 #include <SDL3/SDL.h>
 #include <core/components.h>
+#include <core/core.h>
 #include <stdlib.h>
 #include <titus/sdk.h>
 
@@ -63,29 +64,19 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     SDL_SetGPUSwapchainParameters(
         render_context->device, render_context->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_VSYNC);
 
-    default_pipeline             = create_default_pipeline(ctx->ecs, render_context);
-    vertex_buffer                = SDL_CreateGPUBuffer(render_context->device,
+    size_t capsule_size = 0;
+    vec3f* capsule      = core_capsule_mesh_positions(0.1f, 0.4f, 10, 10, &capsule_size);
+
+    default_pipeline = create_default_pipeline(ctx->ecs, render_context);
+    vertex_buffer    = SDL_CreateGPUBuffer(render_context->device,
                                         &(SDL_GPUBufferCreateInfo){
-                                                           .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
-                                                           .size  = sizeof(Core_VertexPosition) * 4,
+                                               .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
+                                               .size  = sizeof(Core_VertexPosition) * capsule_size,
                                         });
-    Core_VertexPosition verts[4] = {
-        {-0.5, -0.5, 0},
-        {0.5, -0.5, 0},
-        {-0.5, 0.5, 0},
-        {0.5, 0.5, 0},
-    };
 
     // Core_Mesh test_mesh    = {0};
     // test_mesh.vertices     = verts;
     // test_mesh.vertex_count = 4;
-
-    size_t sz      = 0;
-    vec3f* capsule = core_capsule_mesh_positions(8, 32, 10, 10, &sz);
-
-    for(size_t i = 0; i < sz; ++i) {
-        // titus_log_info("[%f, %f, %f]", capsule[i].x, capsule[i].y, capsule[i].z);
-    }
 
     camera_query = ecs_query(ctx->ecs, {.expr = "[in] core.Core_Camera", .cache_kind = EcsQueryCacheAuto});
     mesh_query   = ecs_query(ctx->ecs, {.expr = "[in] core.Core_Mesh", .cache_kind = EcsQueryCacheAuto});
@@ -105,9 +96,14 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     ecs_entity_t mesh_component = ecs_lookup(ctx->ecs, "core.Core_Mesh");
     ecs_entity_t test_e         = ecs_entity(ctx->ecs, {.name = "test_mesh"});
     Core_Mesh* test_mesh        = ecs_ensure_id(ctx->ecs, test_e, mesh_component);
-    test_mesh->vertices         = malloc(sizeof(Core_VertexPosition) * 4);
-    SDL_memcpy(test_mesh->vertices, verts, sizeof(Core_VertexPosition) * 4);
-    test_mesh->vertex_count = 4;
+    test_mesh->vertices         = malloc(sizeof(Core_VertexPosition) * capsule_size);
+    SDL_memset(test_mesh->vertices, 0, sizeof(Core_VertexPosition) * capsule_size);
+
+    for(size_t i = 0; i < capsule_size; ++i) {
+        test_mesh->vertices[i] = (Core_VertexPosition){capsule[i].x, capsule[i].y, capsule[i].z};
+    }
+
+    test_mesh->vertex_count = capsule_size;
 }
 
 CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {
@@ -141,9 +137,22 @@ void render_frame(ecs_iter_t* it) {
             return;
         }
 
+        if(swapchainTexture == NULL) {
+            titus_log_info("Swapchain texture is NULL");
+            return;
+        }
+
         Core_Camera* camera = ecs_field(&camera_it, Core_Camera, 0);
 
+        SDL_GPUColorTargetInfo colorTargetInfo = {0};
+        colorTargetInfo.texture                = swapchainTexture;
+        colorTargetInfo.clear_color            = from_rgba(100, 149, 237, 255); // cornflower blue
+        colorTargetInfo.load_op                = SDL_GPU_LOADOP_CLEAR;
+        colorTargetInfo.store_op               = SDL_GPU_STOREOP_DONT_CARE;
+
         for(int i = 0; i < camera_it.count; i++) {
+
+            SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
 
             // Render every mesh
             while(ecs_query_next(&mesh_it)) {
@@ -152,24 +161,14 @@ void render_frame(ecs_iter_t* it) {
                 for(int j = 0; j < mesh_it.count; j++) {
                     upload_vertex_data(ctx, vertex_buffer, &mesh[j]);
 
-                    if(swapchainTexture != NULL) {
-                        SDL_GPUColorTargetInfo colorTargetInfo = {0};
-                        colorTargetInfo.texture                = swapchainTexture;
-                        colorTargetInfo.clear_color            = from_rgba(100, 149, 237, 255); // cornflower blue
-                        colorTargetInfo.load_op                = SDL_GPU_LOADOP_CLEAR;
-                        colorTargetInfo.store_op               = SDL_GPU_STOREOP_DONT_CARE;
-
-                        SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
-
-                        SDL_BindGPUGraphicsPipeline(renderPass, default_pipeline);
-                        SDL_BindGPUVertexBuffers(
-                            renderPass, 0, &(SDL_GPUBufferBinding){.buffer = vertex_buffer, .offset = 0}, 1);
-                        SDL_DrawGPUPrimitives(renderPass, 4, 1, 0, 0);
-
-                        SDL_EndGPURenderPass(renderPass);
-                    }
+                    SDL_BindGPUGraphicsPipeline(renderPass, default_pipeline);
+                    SDL_BindGPUVertexBuffers(
+                        renderPass, 0, &(SDL_GPUBufferBinding){.buffer = vertex_buffer, .offset = 0}, 1);
+                    SDL_DrawGPUPrimitives(renderPass, mesh[j].vertex_count, 1, 0, 0);
                 }
             }
+
+            SDL_EndGPURenderPass(renderPass);
         }
 
         SDL_SubmitGPUCommandBuffer(cmdbuf);
