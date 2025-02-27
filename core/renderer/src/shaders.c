@@ -56,7 +56,7 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
                 {.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3, .location = 0, .offset = 0, .buffer_slot = 0},
             },
     };
-    ci.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLESTRIP;
+    ci.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 
     ci.rasterizer_state           = (SDL_GPURasterizerState){0};
     ci.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;

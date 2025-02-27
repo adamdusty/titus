@@ -2,78 +2,132 @@
 
 #include <SDL3/SDL.h>
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
 #include <titus/sdk.h>
 
-vec3f* core_capsule_mesh_positions(float radius, float height, size_t segments, size_t rings, size_t* count) {
-    if(radius <= 0 || height < 0 || segments < 3 || rings < 2) {
-        *count = 0;
-        return NULL; // Invalid parameters
+CoreMesh core_create_capsule_mesh(float radius, float height, int slices, int stacks) {
+    CoreMesh mesh;
+
+    // Calculate vertex and index counts
+    int hemisphere_stacks = stacks / 2;
+    int cylinder_stacks   = 1; // The middle part
+
+    // Total stacks = bottom hemisphere + cylinder + top hemisphere
+    int total_stacks = hemisphere_stacks * 2 + cylinder_stacks;
+
+    // Calculate vertex count
+    // Each stack has (slices + 1) vertices, and we have (total_stacks + 1) rings of vertices
+    mesh.vertex_count = (slices + 1) * (total_stacks + 1);
+
+    // Calculate index count for triangles
+    // Each grid cell has 2 triangles, each triangle has 3 indices
+    // We have slices * total_stacks grid cells
+    mesh.index_count = slices * total_stacks * 6;
+
+    // Allocate memory
+    mesh.vertices = (CoreVertexPosition*)malloc(mesh.vertex_count * sizeof(CoreVertexPosition));
+    mesh.indices  = (uint32_t*)malloc(mesh.index_count * sizeof(uint32_t));
+
+    if(!mesh.vertices || !mesh.indices) {
+        // Handle allocation failure
+        if(mesh.vertices)
+            free(mesh.vertices);
+        if(mesh.indices)
+            free(mesh.indices);
+
+        mesh.vertices     = NULL;
+        mesh.indices      = NULL;
+        mesh.vertex_count = 0;
+        mesh.index_count  = 0;
+
+        return mesh;
     }
 
-    // Calculate the total number of vertices
-    // - Top hemisphere: rings * segments
-    // - Cylinder: 2 * segments (top and bottom rings)
-    // - Bottom hemisphere: rings * segments
-    *count = (2 * rings + 2) * segments;
+    const float PI          = 3.14159265358979323846f;
+    const float half_height = height * 0.5f;
+    int vertex_index        = 0;
+    int index_index         = 0;
 
-    // Allocate memory for all vertices
-    vec3f* vertices = (vec3f*)SDL_malloc(*count * sizeof(vec3f));
-    if(!vertices) {
-        *count = 0;
-        return NULL; // Memory allocation failed
-    }
+    // Generate vertices
+    for(int i = 0; i <= total_stacks; i++) {
+        float stack_perc = (float)i / (float)total_stacks;
+        float theta      = stack_perc * PI; // Range from 0 to PI
 
-    size_t vertex_index = 0;
-    float const R       = 1.0f / (float)(rings - 1);
-    float const S       = 1.0f / (float)(segments - 1);
+        float y;
+        float stack_radius;
 
-    // Generate top hemisphere vertices
-    for(size_t r = 0; r < rings; r++) {
-        float const phi = M_PI * 0.5f * (1.0f - r * R); // π/2 to 0 (top to equator)
-        for(size_t s = 0; s < segments; s++) {
-            float const theta = 2.0f * M_PI * s * S;
+        // Bottom hemisphere
+        if(i < hemisphere_stacks) {
+            float hemi_perc = (float)i / (float)hemisphere_stacks;
+            // theta           = (1.0f - hemi_perc) * (PI / 2.0f) + (PI / 2.0f); // Range from PI to PI/2
+            theta = (-0.5f * PI) + (hemi_perc * (PI / 2.0f)); // Range from -PI/2 to 0
+            // y               = -half_height - radius * cosf(theta);
+            // stack_radius    = radius * sinf(theta);
+            y            = -half_height + radius * sinf(theta); // Using sin for correct orientation
+            stack_radius = radius * cosf(theta);                // Using cos for correct orientation
+        }
+        // Cylinder
+        else if(i <= hemisphere_stacks + cylinder_stacks) {
+            y            = -half_height + (i - hemisphere_stacks) * height / cylinder_stacks;
+            stack_radius = radius;
+        }
+        // Top hemisphere
+        else {
+            float hemi_perc = (float)(i - hemisphere_stacks - cylinder_stacks) / (float)hemisphere_stacks;
+            theta           = hemi_perc * (PI / 2.0f); // Range from PI/2 to 0
+            y               = half_height + radius * cosf(theta);
+            stack_radius    = radius * sinf(theta);
+        }
 
-            vertices[vertex_index].x = radius * cosf(phi) * cosf(theta);
-            vertices[vertex_index].y = radius * sinf(phi) + height * 0.5f;
-            vertices[vertex_index].z = radius * cosf(phi) * sinf(theta);
+        for(int j = 0; j <= slices; j++) {
+            float slice_perc = (float)j / (float)slices;
+            float phi        = slice_perc * 2.0f * PI; // Range from 0 to 2PI
+
+            float x = stack_radius * cosf(phi);
+            float z = stack_radius * sinf(phi);
+
+            mesh.vertices[vertex_index].x = x;
+            mesh.vertices[vertex_index].y = y;
+            mesh.vertices[vertex_index].z = z;
+
             vertex_index++;
         }
     }
 
-    // Generate cylinder vertices (top ring)
-    float y_top = height * 0.5f;
-    for(size_t s = 0; s < segments; s++) {
-        float const theta = 2.0f * M_PI * s * S;
+    // Generate indices
+    for(int i = 0; i < total_stacks; i++) {
+        for(int j = 0; j < slices; j++) {
+            int first  = i * (slices + 1) + j;
+            int second = first + (slices + 1);
 
-        vertices[vertex_index].x = radius * cosf(theta);
-        vertices[vertex_index].y = y_top;
-        vertices[vertex_index].z = radius * sinf(theta);
-        vertex_index++;
-    }
+            // First triangle
+            mesh.indices[index_index++] = first;
+            mesh.indices[index_index++] = second;
+            mesh.indices[index_index++] = first + 1;
 
-    // Generate cylinder vertices (bottom ring)
-    float y_bottom = -height * 0.5f;
-    for(size_t s = 0; s < segments; s++) {
-        float const theta = 2.0f * M_PI * s * S;
-
-        vertices[vertex_index].x = radius * cosf(theta);
-        vertices[vertex_index].y = y_bottom;
-        vertices[vertex_index].z = radius * sinf(theta);
-        vertex_index++;
-    }
-
-    // Generate bottom hemisphere vertices
-    for(size_t r = 0; r < rings; r++) {
-        float const phi = M_PI * 0.5f * r * R; // 0 to π/2 (equator to bottom)
-        for(size_t s = 0; s < segments; s++) {
-            float const theta = 2.0f * M_PI * s * S;
-
-            vertices[vertex_index].x = radius * cosf(phi) * cosf(theta);
-            vertices[vertex_index].y = -radius * sinf(phi) - height * 0.5f;
-            vertices[vertex_index].z = radius * cosf(phi) * sinf(theta);
-            vertex_index++;
+            // Second triangle
+            mesh.indices[index_index++] = first + 1;
+            mesh.indices[index_index++] = second;
+            mesh.indices[index_index++] = second + 1;
         }
     }
 
-    return vertices;
+    return mesh;
+}
+
+// Function to free a CoreMesh
+void core_free_core_mesh(CoreMesh* mesh) {
+    if(mesh) {
+        if(mesh->vertices) {
+            free(mesh->vertices);
+            mesh->vertices = NULL;
+        }
+        if(mesh->indices) {
+            free(mesh->indices);
+            mesh->indices = NULL;
+        }
+        mesh->vertex_count = 0;
+        mesh->index_count  = 0;
+    }
 }
