@@ -1,5 +1,6 @@
 #include "core/core.h"
 
+#include "core/components.h"
 #include "core/export.h"
 #include "core/input.h"
 #include "core/rendering.h"
@@ -9,6 +10,10 @@ ECS_COMPONENT_DECLARE(CoreFrameInput);
 ECS_COMPONENT_DECLARE(CoreMesh);
 ECS_COMPONENT_DECLARE(CoreCamera);
 
+ECS_COMPONENT_DECLARE(CorePosition);
+ECS_COMPONENT_DECLARE(CoreScale);
+ECS_COMPONENT_DECLARE(CoreRotation);
+
 CORE_EXPORT void coreImport(ecs_world_t* ecs) {
     titus_log_info("Importing the core module");
 
@@ -17,6 +22,9 @@ CORE_EXPORT void coreImport(ecs_world_t* ecs) {
     ECS_COMPONENT_DEFINE(ecs, CoreFrameInput);
     ECS_COMPONENT_DEFINE(ecs, CoreCamera);
     ECS_COMPONENT_DEFINE(ecs, CoreMesh);
+    ECS_COMPONENT_DEFINE(ecs, CorePosition);
+    ECS_COMPONENT_DEFINE(ecs, CoreScale);
+    ECS_COMPONENT_DEFINE(ecs, CoreRotation);
 
     titus_log_info("Core module imported");
 }

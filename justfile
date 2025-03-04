@@ -3,6 +3,7 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 alias b := build
 alias c := configure
 alias p := packaged
+alias t := test
 
 [windows]
 build:

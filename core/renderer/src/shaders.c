@@ -19,6 +19,7 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
     vert_ci.format                  = SDL_GPU_SHADERFORMAT_SPIRV;
     vert_ci.entrypoint              = "main";
     vert_ci.stage                   = SDL_GPU_SHADERSTAGE_VERTEX;
+    vert_ci.num_uniform_buffers     = 1;
 
     SDL_GPUShader* vert_shader = SDL_CreateGPUShader(context->device, &vert_ci);
 

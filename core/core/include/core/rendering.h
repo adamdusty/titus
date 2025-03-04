@@ -7,7 +7,6 @@
 #include <titus/linalg/vec.h>
 
 typedef struct CoreCamera {
-    vec3f position;
     vec3f forward;
     vec3f up;
 } CoreCamera;
@@ -37,4 +36,4 @@ typedef struct CoreMesh {
  * @param count[out] Set to the number of vec3f elements at the returned pointer
  * @return vec3f* Pointer to an array of positions.
  */
-CORE_EXPORT CoreMesh core_create_capsule_mesh(float radius, float height, int slices, int stacks);
+CORE_EXPORT CoreMesh core_create_capsule_mesh(float radius, float height, uint32_t slices, uint32_t stacks);

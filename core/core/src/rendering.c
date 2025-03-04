@@ -6,15 +6,15 @@
 #include <string.h>
 #include <titus/sdk.h>
 
-CoreMesh core_create_capsule_mesh(float radius, float height, int slices, int stacks) {
+CoreMesh core_create_capsule_mesh(float radius, float height, uint32_t slices, uint32_t stacks) {
     CoreMesh mesh;
 
     // Calculate vertex and index counts
-    int hemisphere_stacks = stacks / 2;
-    int cylinder_stacks   = 1; // The middle part
+    uint32_t hemisphere_stacks = stacks / 2;
+    uint32_t cylinder_stacks   = 1; // The middle part
 
     // Total stacks = bottom hemisphere + cylinder + top hemisphere
-    int total_stacks = hemisphere_stacks * 2 + cylinder_stacks;
+    uint32_t total_stacks = hemisphere_stacks * 2 + cylinder_stacks;
 
     // Calculate vertex count
     // Each stack has (slices + 1) vertices, and we have (total_stacks + 1) rings of vertices
@@ -50,7 +50,7 @@ CoreMesh core_create_capsule_mesh(float radius, float height, int slices, int st
     int index_index         = 0;
 
     // Generate vertices
-    for(int i = 0; i <= total_stacks; i++) {
+    for(uint32_t i = 0; i <= total_stacks; i++) {
         float stack_perc = (float)i / (float)total_stacks;
         float theta      = stack_perc * PI; // Range from 0 to PI
 
@@ -60,16 +60,13 @@ CoreMesh core_create_capsule_mesh(float radius, float height, int slices, int st
         // Bottom hemisphere
         if(i < hemisphere_stacks) {
             float hemi_perc = (float)i / (float)hemisphere_stacks;
-            // theta           = (1.0f - hemi_perc) * (PI / 2.0f) + (PI / 2.0f); // Range from PI to PI/2
-            theta = (-0.5f * PI) + (hemi_perc * (PI / 2.0f)); // Range from -PI/2 to 0
-            // y               = -half_height - radius * cosf(theta);
-            // stack_radius    = radius * sinf(theta);
-            y            = -half_height + radius * sinf(theta); // Using sin for correct orientation
-            stack_radius = radius * cosf(theta);                // Using cos for correct orientation
+            theta           = (-0.5f * PI) + (hemi_perc * (PI / 2.0f)); // Range from -PI/2 to 0
+            y               = -half_height + radius * sinf(theta);      // Using sin for correct orientation
+            stack_radius    = radius * cosf(theta);                     // Using cos for correct orientation
         }
         // Cylinder
         else if(i <= hemisphere_stacks + cylinder_stacks) {
-            y            = -half_height + (i - hemisphere_stacks) * height / cylinder_stacks;
+            y            = -half_height + (float)(i - hemisphere_stacks) * height / (float)cylinder_stacks;
             stack_radius = radius;
         }
         // Top hemisphere
@@ -80,7 +77,7 @@ CoreMesh core_create_capsule_mesh(float radius, float height, int slices, int st
             stack_radius    = radius * sinf(theta);
         }
 
-        for(int j = 0; j <= slices; j++) {
+        for(uint32_t j = 0; j <= slices; j++) {
             float slice_perc = (float)j / (float)slices;
             float phi        = slice_perc * 2.0f * PI; // Range from 0 to 2PI
 
@@ -96,10 +93,10 @@ CoreMesh core_create_capsule_mesh(float radius, float height, int slices, int st
     }
 
     // Generate indices
-    for(int i = 0; i < total_stacks; i++) {
-        for(int j = 0; j < slices; j++) {
-            int first  = i * (slices + 1) + j;
-            int second = first + (slices + 1);
+    for(uint32_t i = 0; i < total_stacks; i++) {
+        for(uint32_t j = 0; j < slices; j++) {
+            uint32_t first  = i * (slices + 1) + j;
+            uint32_t second = first + (slices + 1);
 
             // First triangle
             mesh.indices[index_index++] = first;

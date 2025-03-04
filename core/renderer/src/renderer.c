@@ -9,7 +9,13 @@
 #include <stdlib.h>
 #include <titus/sdk.h>
 
+/* TODO
+    - Add uniforms to matrix
+    - Add uniforms to pipeline
+*/
+
 static SDL_GPUGraphicsPipeline* default_pipeline = NULL;
+static SDL_GPUBuffer* camera_buffer              = NULL;
 static ecs_query_t* camera_query                 = NULL;
 static ecs_query_t* mesh_query                   = NULL;
 
@@ -78,19 +84,20 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
 
     default_pipeline = create_default_pipeline(ctx->ecs, render_context);
 
-    camera_query = ecs_query(ctx->ecs, {.expr = "[in] core.CoreCamera", .cache_kind = EcsQueryCacheAuto});
-    mesh_query   = ecs_query(
+    camera_query =
+        ecs_query(ctx->ecs, {.expr = "[in] core.CoreCamera, [in] core.CorePosition", .cache_kind = EcsQueryCacheAuto});
+    mesh_query = ecs_query(
         ctx->ecs,
         {.expr = "[in] core.CoreMesh, [in] core.renderer.CoreMeshRenderInfo", .cache_kind = EcsQueryCacheAuto});
 
     ecs_entity_t cam = ecs_entity(ctx->ecs, {.name = "main_camera"});
+    ecs_set(ctx->ecs, cam, CorePosition, {.x = 0.0f, .y = 0.0f, .z = -10.0f});
     ecs_set(ctx->ecs,
             cam,
             CoreCamera,
             {
-                .up       = {0, 1.0f, 0},
-                .forward  = {0, 0, 1.0f},
-                .position = {0, 0, 0},
+                .up      = {0, 1.0f, 0},
+                .forward = {0, 0, 1.0f},
             });
 
     ecs_query_t* mesh_no_info_q  = ecs_query(ctx->ecs, {.expr = "core.CoreMesh, !core.renderer.CoreMeshRenderInfo"});
@@ -127,36 +134,44 @@ void render_frame(ecs_iter_t* it) {
     SDL_Window* win    = ctx->window;
     SDL_GPUDevice* dev = ctx->device;
 
+    SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(dev);
+    if(cmdbuf == NULL) {
+        titus_log_error("AcquireGPUCommandBuffer failed: %s", SDL_GetError());
+        return;
+    }
+    SDL_GPUTexture* swapchainTexture;
+    if(!SDL_WaitAndAcquireGPUSwapchainTexture(cmdbuf, win, &swapchainTexture, NULL, NULL)) {
+        titus_log_error("WaitAndAcquireGPUSwapchainTexture failed: %s", SDL_GetError());
+        return;
+    }
+
+    if(swapchainTexture == NULL) {
+        titus_log_info("Swapchain texture is NULL");
+        return;
+    }
+
+    SDL_GPUColorTargetInfo colorTargetInfo = {0};
+    colorTargetInfo.texture                = swapchainTexture;
+    colorTargetInfo.clear_color            = from_rgba(100, 149, 237, 255); // cornflower blue
+    colorTargetInfo.load_op                = SDL_GPU_LOADOP_CLEAR;
+    colorTargetInfo.store_op               = SDL_GPU_STOREOP_DONT_CARE;
+
     // Render scene from every camera view
     while(ecs_query_next(&camera_it)) {
-        SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(dev);
-        if(cmdbuf == NULL) {
-            titus_log_error("AcquireGPUCommandBuffer failed: %s", SDL_GetError());
-            return;
-        }
-
-        SDL_GPUTexture* swapchainTexture;
-        if(!SDL_WaitAndAcquireGPUSwapchainTexture(cmdbuf, win, &swapchainTexture, NULL, NULL)) {
-            titus_log_error("WaitAndAcquireGPUSwapchainTexture failed: %s", SDL_GetError());
-            return;
-        }
-
-        if(swapchainTexture == NULL) {
-            titus_log_info("Swapchain texture is NULL");
-            return;
-        }
-
         CoreCamera* camera = ecs_field(&camera_it, CoreCamera, 0);
 
-        SDL_GPUColorTargetInfo colorTargetInfo = {0};
-        colorTargetInfo.texture                = swapchainTexture;
-        colorTargetInfo.clear_color            = from_rgba(100, 149, 237, 255); // cornflower blue
-        colorTargetInfo.load_op                = SDL_GPU_LOADOP_CLEAR;
-        colorTargetInfo.store_op               = SDL_GPU_STOREOP_DONT_CARE;
+        mat4f cam[2] = {0};
+        cam[0]       = titus_mat_identity();
+        cam[1]       = titus_mat_identity();
+        SDL_PushGPUVertexUniformData(cmdbuf, 0, &cam, sizeof(mat4f) * 2);
+
+        SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
+        if(NULL == render_pass) {
+            titus_log_error("Failed to begin render pass: %s", SDL_GetError());
+            return;
+        }
 
         for(int i = 0; i < camera_it.count; i++) {
-
-            SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
 
             // Render every mesh
             while(ecs_query_next(&mesh_it)) {
@@ -167,18 +182,17 @@ void render_frame(ecs_iter_t* it) {
                     upload_vertex_data(ctx, render_info->vertex_buffer, &mesh[j]);
                     upload_index_data(ctx, render_info->index_buffer, &mesh[j]);
 
-                    SDL_BindGPUGraphicsPipeline(renderPass, default_pipeline);
+                    SDL_BindGPUGraphicsPipeline(render_pass, default_pipeline);
                     SDL_BindGPUVertexBuffers(
-                        renderPass, 0, &(SDL_GPUBufferBinding){.buffer = render_info->vertex_buffer, .offset = 0}, 1);
+                        render_pass, 0, &(SDL_GPUBufferBinding){.buffer = render_info->vertex_buffer, .offset = 0}, 1);
                     SDL_BindGPUIndexBuffer(
-                        renderPass, &(SDL_GPUBufferBinding){.buffer = render_info->index_buffer, .offset = 0}, 1);
-                    SDL_DrawGPUIndexedPrimitives(renderPass, mesh[j].index_count, 1, 0, 0, 0);
+                        render_pass, &(SDL_GPUBufferBinding){.buffer = render_info->index_buffer, .offset = 0}, 1);
+                    SDL_DrawGPUIndexedPrimitives(render_pass, mesh[j].index_count, 1, 0, 0, 0);
                 }
             }
-
-            SDL_EndGPURenderPass(renderPass);
         }
 
+        SDL_EndGPURenderPass(render_pass);
         SDL_SubmitGPUCommandBuffer(cmdbuf);
     }
 

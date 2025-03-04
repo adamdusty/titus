@@ -1,5 +1,16 @@
 #include "titus/linalg/mat.h"
 
+#include <math.h>
+
+mat4f titus_mat_identity() {
+    return (mat4f){
+        .w = {1.0f, 0.0f, 0.0f, 0.0f},
+        .x = {0.0f, 1.0f, 0.0f, 0.0f},
+        .y = {0.0f, 0.0f, 1.0f, 0.0f},
+        .z = {0.0f, 0.0f, 0.0f, 1.0f},
+    };
+}
+
 mat4f titus_mat_add(const mat4f* lhs, const mat4f* rhs) {
     return (mat4f){
         .w = titus_vec4_add(&lhs->w, &rhs->w),
@@ -47,6 +58,43 @@ mat4f titus_mat_mul(const mat4f* lhs, const mat4f* rhs) {
     return result;
 }
 
-mat4f titus_mat_translate(const mat4f* mat, vec3f translation) {}
+mat4f titus_mat_translate(const mat4f* mat, const vec3f* translation) {
+    mat4f res = *mat;
 
-mat4f titus_mat_scale(const mat4f* mat, vec3f translation) {}
+    res.w.x += translation->x;
+    res.w.y += translation->y;
+    res.w.z += translation->z;
+
+    return res;
+}
+
+mat4f titus_mat_scale(const mat4f* mat, const vec3f* scale) {
+    mat4f res = *mat;
+
+    res.x.x *= scale->x;
+    res.x.y *= scale->x;
+    res.x.z *= scale->x;
+
+    res.y.x *= scale->y;
+    res.y.y *= scale->y;
+    res.y.z *= scale->y;
+
+    res.z.x *= scale->z;
+    res.z.y *= scale->z;
+    res.z.z *= scale->z;
+
+    return res;
+}
+
+mat4f titus_mat_create_perspective_fov(float fieldOfView,
+                                       float aspectRatio,
+                                       float nearPlaneDistance,
+                                       float farPlaneDistance) {
+    float num = 1.0f / (tanf(fieldOfView * 0.5f));
+    return (mat4f){
+        {num / aspectRatio, 0, 0, 0},
+        {0, num, 0, 0},
+        {0, 0, farPlaneDistance / (nearPlaneDistance - farPlaneDistance), -1},
+        {0, 0, (nearPlaneDistance * farPlaneDistance) / (nearPlaneDistance - farPlaneDistance), 0},
+    };
+}
