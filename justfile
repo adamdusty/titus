@@ -20,3 +20,6 @@ clean:
 
 packaged:
     build/dev/package/titus_rt
+
+test:
+    ctest --preset dev

@@ -3,6 +3,7 @@
 #include "titus/assets/assets.h"
 #include "titus/context/context.h"
 #include "titus/ecs/ecs.h"
+#include "titus/linalg/mat.h"
 #include "titus/linalg/vec.h"
 #include "titus/log/log.h"
 #include <SDL3/SDL.h>

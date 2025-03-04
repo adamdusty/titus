@@ -22,9 +22,13 @@ target_sources(core_renderer
         BASE_DIRS src
         FILES
             src/shaders.h
+            src/gpu.h
+            src/context.h
+            src/components.h
     PRIVATE
         src/renderer.c
         src/shaders.c
+        src/gpu.c
 )
 
 configure_file(module.json module.json)
