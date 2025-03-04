@@ -1,6 +1,7 @@
 #include "core/rendering.h"
 
 #include <SDL3/SDL.h>
+#include <cglm/cglm.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>

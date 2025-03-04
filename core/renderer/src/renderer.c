@@ -92,7 +92,7 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
         {.expr = "[in] core.CoreMesh, [in] core.renderer.CoreMeshRenderInfo", .cache_kind = EcsQueryCacheAuto});
 
     ecs_entity_t cam = ecs_entity(ctx->ecs, {.name = "main_camera"});
-    ecs_set(ctx->ecs, cam, CorePosition, {.x = 0.0f, .y = 0.0f, .z = -10.0f});
+    ecs_set(ctx->ecs, cam, CorePosition, {0.0f, 0.0f, -10.0f});
     ecs_set(ctx->ecs,
             cam,
             CoreCamera,
@@ -162,12 +162,10 @@ void render_frame(ecs_iter_t* it) {
         CoreCamera* camera            = ecs_field(&camera_it, CoreCamera, 0);
         CorePosition* camera_position = ecs_field(&camera_it, CorePosition, 1);
 
-        float pos[3] = {camera_position->x, camera_position->y, camera_position->z};
-        float up[3]  = {camera->up.x, camera->up.y, camera->up.z};
-        mat4 cam[2]  = {0};
+        mat4 cam[2] = {0};
 
         glm_perspective(45.0f, 1280.0f / 720.0f, 0.01f, 100.0f, cam[0]);
-        glm_lookat(pos, (float[]){0.0f, 0.0f, 0.0f}, up, cam[1]);
+        glm_lookat(*camera_position, (float[]){0.0f, 0.0f, 0.0f}, camera->up, cam[1]);
         SDL_PushGPUVertexUniformData(cmdbuf, 0, &cam, sizeof(mat4) * 2);
 
         SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);

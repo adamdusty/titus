@@ -1,14 +1,14 @@
 #pragma once
 
+#include <cglm/cglm.h>
 #include <core/export.h>
 #include <flecs.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <titus/linalg/vec.h>
 
 typedef struct CoreCamera {
-    vec3f forward;
-    vec3f up;
+    vec3 forward;
+    vec3 up;
 } CoreCamera;
 
 typedef struct CoreVertexPosition {

@@ -3,11 +3,10 @@
 #include "core/input.h"
 #include "core/rendering.h"
 
-#include <titus/linalg/mat.h>
-#include <titus/linalg/vec.h>
+#include <cglm/cglm.h>
 
-typedef vec3f CorePosition;
-typedef vec3f CoreScale;
-typedef vec3f CoreRotation;
+typedef vec3 CorePosition;
+typedef vec3 CoreScale;
+typedef vec3 CoreRotation;
 
-typedef mat4f CoreTransform;
+typedef mat4 CoreTransform;
