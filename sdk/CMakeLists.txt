@@ -1,6 +1,6 @@
 add_library(titus_sdk SHARED)
 add_library(titus::sdk ALIAS titus_sdk)
-target_link_libraries(titus_sdk PUBLIC SDL3::SDL3 flecs::flecs)
+target_link_libraries(titus_sdk PUBLIC SDL3::SDL3 flecs::flecs cglm)
 target_compile_options(titus_sdk PRIVATE ${DEBUG_COMPILER_FLAGS})
 target_sources(titus_sdk
     PUBLIC

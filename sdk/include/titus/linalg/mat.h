@@ -30,3 +30,5 @@ TITUS_EXPORT mat4f titus_mat_create_perspective_fov(float fieldOfView,
                                                     float aspectRatio,
                                                     float nearPlaneDistance,
                                                     float farPlaneDistance);
+
+TITUS_EXPORT mat4f titus_mat_look_at(const vec3f* pos, const vec3f* target, const vec3f* up);

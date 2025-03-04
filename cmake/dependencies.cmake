@@ -12,6 +12,15 @@ FetchContent_Declare(
 )
 
 FetchContent_Declare(
+    cglm
+    GIT_REPOSITORY  https://github.com/recp/cglm.git
+    GIT_TAG         v0.9.6
+    GIT_SHALLOW
+    SYSTEM
+    EXCLUDE_FROM_ALL
+)
+
+FetchContent_Declare(
     flecs
     GIT_REPOSITORY  https://github.com/SanderMertens/flecs.git
     GIT_TAG         v4.0.4
@@ -29,6 +38,7 @@ FetchContent_Declare(
     FIND_PACKAGE_ARGS
 )
 
-FetchContent_MakeAvailable(SDL3 flecs yyjson)
+
+FetchContent_MakeAvailable(SDL3 flecs yyjson cglm)
 
 endif(TITUS_FETCHCONTENT)

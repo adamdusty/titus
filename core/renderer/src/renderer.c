@@ -4,6 +4,7 @@
 #include "gpu.h"
 #include "shaders.h"
 #include <SDL3/SDL.h>
+#include <cglm/cglm.h>
 #include <core/components.h>
 #include <core/core.h>
 #include <stdlib.h>
@@ -158,12 +159,16 @@ void render_frame(ecs_iter_t* it) {
 
     // Render scene from every camera view
     while(ecs_query_next(&camera_it)) {
-        CoreCamera* camera = ecs_field(&camera_it, CoreCamera, 0);
+        CoreCamera* camera            = ecs_field(&camera_it, CoreCamera, 0);
+        CorePosition* camera_position = ecs_field(&camera_it, CorePosition, 1);
 
-        mat4f cam[2] = {0};
-        cam[0]       = titus_mat_identity();
-        cam[1]       = titus_mat_identity();
-        SDL_PushGPUVertexUniformData(cmdbuf, 0, &cam, sizeof(mat4f) * 2);
+        float pos[3] = {camera_position->x, camera_position->y, camera_position->z};
+        float up[3]  = {camera->up.x, camera->up.y, camera->up.z};
+        mat4 cam[2]  = {0};
+
+        glm_perspective(45.0f, 1280.0f / 720.0f, 0.01f, 100.0f, cam[0]);
+        glm_lookat(pos, (float[]){0.0f, 0.0f, 0.0f}, up, cam[1]);
+        SDL_PushGPUVertexUniformData(cmdbuf, 0, &cam, sizeof(mat4) * 2);
 
         SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
         if(NULL == render_pass) {
@@ -172,7 +177,6 @@ void render_frame(ecs_iter_t* it) {
         }
 
         for(int i = 0; i < camera_it.count; i++) {
-
             // Render every mesh
             while(ecs_query_next(&mesh_it)) {
                 CoreMesh* mesh                  = ecs_field(&mesh_it, CoreMesh, 0);

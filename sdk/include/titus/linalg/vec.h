@@ -39,3 +39,9 @@ TITUS_EXPORT vec4f titus_vec4_div(const vec4f* lhs, const vec4f* rhs);
 TITUS_EXPORT float titus_vec2_dot(const vec2f* lhs, const vec2f* rhs);
 TITUS_EXPORT float titus_vec3_dot(const vec3f* lhs, const vec3f* rhs);
 TITUS_EXPORT float titus_vec4_dot(const vec4f* lhs, const vec4f* rhs);
+
+TITUS_EXPORT vec2f titus_vec2_norm(const vec2f* vec);
+TITUS_EXPORT vec3f titus_vec3_norm(const vec3f* vec);
+TITUS_EXPORT vec4f titus_vec4_norm(const vec4f* vec);
+
+TITUS_EXPORT vec3f titus_vec3_cross(const vec3f* lhs, const vec3f* rhs);

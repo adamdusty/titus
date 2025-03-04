@@ -1,5 +1,7 @@
 #include "titus/linalg/vec.h"
 
+#include <math.h>
+
 vec2f titus_vec2_add(const vec2f* lhs, const vec2f* rhs) {
     return (vec2f){
         .x = lhs->x + rhs->x,
@@ -107,3 +109,24 @@ float titus_vec3_dot(const vec3f* lhs, const vec3f* rhs) {
 float titus_vec4_dot(const vec4f* lhs, const vec4f* rhs) {
     return lhs->w * rhs->w + lhs->x * rhs->x + lhs->y * rhs->y + lhs->z * rhs->z;
 }
+
+TITUS_EXPORT vec2f titus_vec2_norm(const vec2f* vec) {}
+
+TITUS_EXPORT vec3f titus_vec3_norm(const vec3f* vec) {
+
+    // Calculate the magnitude of the vector
+    float magnitude = sqrtf(vec->x * vec->x + vec->y * vec->y + vec->z * vec->z);
+
+    vec3f res = {0};
+    if(magnitude > 0.0f) {
+        res.x /= magnitude;
+        res.y /= magnitude;
+        res.z /= magnitude;
+    }
+
+    return res;
+}
+
+TITUS_EXPORT vec4f titus_vec4_norm(const vec4f* vec) {}
+
+TITUS_EXPORT vec3f titus_vec3_cross(const vec3f* lhs, const vec3f* rhs) {}

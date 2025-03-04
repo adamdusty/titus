@@ -98,3 +98,16 @@ mat4f titus_mat_create_perspective_fov(float fieldOfView,
         {0, 0, (nearPlaneDistance * farPlaneDistance) / (nearPlaneDistance - farPlaneDistance), 0},
     };
 }
+
+mat4f titus_mat_look_at(const vec3f* pos, const vec3f* target, const vec3f* up) {
+    vec3f target_to_pos = titus_vec3_norm((vec3f[]){titus_vec3_sub(pos, target)});
+    vec3f perp          = titus_vec3_norm((vec3f[]){titus_vec3_cross(up, &target_to_pos)});
+    vec3f new_up        = titus_vec3_cross(&target_to_pos, &perp);
+
+    return (mat4f){
+        {perp.x, new_up.x, target_to_pos.x, 0},
+        {perp.y, new_up.y, target_to_pos.y, 0},
+        {perp.z, new_up.z, target_to_pos.z, 0},
+        {-titus_vec3_dot(&perp, pos), -titus_vec3_dot(&new_up, pos), -titus_vec3_dot(&target_to_pos, pos), 1},
+    };
+}
