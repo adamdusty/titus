@@ -9,6 +9,7 @@ FetchContent_Declare(
     GIT_SHALLOW
     SYSTEM
     EXCLUDE_FROM_ALL
+    OVERRIDE_FIND_PACKAGE
 )
 
 FetchContent_Declare(
@@ -18,6 +19,7 @@ FetchContent_Declare(
     GIT_SHALLOW
     SYSTEM
     EXCLUDE_FROM_ALL
+    OVERRIDE_FIND_PACKAGE
 )
 
 FetchContent_Declare(
@@ -26,7 +28,8 @@ FetchContent_Declare(
     GIT_TAG         v4.0.4
     GIT_SHALLOW
     SYSTEM
-    FIND_PACKAGE_ARGS
+    EXCLUDE_FROM_ALL
+    OVERRIDE_FIND_PACKAGE
 )
 
 FetchContent_Declare(
@@ -35,10 +38,16 @@ FetchContent_Declare(
     GIT_TAG         0.10.0
     GIT_SHALLOW
     SYSTEM
-    FIND_PACKAGE_ARGS
+    EXCLUDE_FROM_ALL
+    OVERRIDE_FIND_PACKAGE
 )
 
 
 FetchContent_MakeAvailable(SDL3 flecs yyjson cglm)
 
 endif(TITUS_FETCHCONTENT)
+
+find_package(SDL3 REQUIRED)
+find_package(cglm REQUIRED)
+find_package(flecs REQUIRED)
+find_package(yyjson REQUIRED)
