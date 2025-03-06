@@ -14,7 +14,7 @@ void upload_vertex_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const C
                                         .size  = sizeof(mesh->vertices[0]) * mesh->vertex_count,
                                     });
 
-    CoreVertexPosition* transfer_data = SDL_MapGPUTransferBuffer(ctx->device, transfer, false);
+    CoreVertexPositionNormal* transfer_data = SDL_MapGPUTransferBuffer(ctx->device, transfer, false);
 
     for(size_t i = 0; i < mesh->vertex_count; i++) {
         transfer_data[i] = mesh->vertices[i];

@@ -5,21 +5,20 @@
 #include "shaders.h"
 #include <SDL3/SDL.h>
 #include <cglm/cglm.h>
+#include <cglm/clipspace/view_rh_zo.h>
 #include <core/components.h>
 #include <core/core.h>
 #include <stdlib.h>
 #include <titus/sdk.h>
 
-/* TODO
-    - Add uniforms to matrix
-    - Add uniforms to pipeline
-*/
+CoreMesh create_cube_mesh();
 
 static SDL_GPUGraphicsPipeline* default_pipeline = NULL;
-static SDL_GPUBuffer* camera_buffer              = NULL;
+static SDL_GPUTexture* depth_texture             = NULL;
 static ecs_query_t* camera_query                 = NULL;
 static ecs_query_t* mesh_query                   = NULL;
 
+core_render_context* create_render_context(SDL_Window* window, ecs_world_t* ecs);
 void render_frame(ecs_iter_t* it);
 
 ECS_COMPONENT_DECLARE(core_render_context);
@@ -45,32 +44,16 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
         return;
     }
 
-    core_render_context* render_context = ecs_singleton_ensure(ctx->ecs, core_render_context);
-
-    SDL_GPUDevice* gpu_device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, "vulkan");
-    if(NULL == gpu_device) {
-        titus_log_error("Error initializing GPU device from SDL: %s", SDL_GetError());
-        return;
+    core_render_context* render_context = create_render_context(ctx->window, ctx->ecs);
+    if(NULL == render_context) {
+        titus_log_error("Failed to create render context");
     }
-
-    if(NULL == ctx->window) {
-        titus_log_error("Application window is null");
-        return;
-    }
-
-    if(!SDL_ClaimWindowForGPUDevice(gpu_device, ctx->window)) {
-        titus_log_error("Failed to claim GPU device for window: %s", SDL_GetError());
-        return;
-    }
-
-    render_context->window = ctx->window;
-    render_context->device = gpu_device;
 
     SDL_SetGPUSwapchainParameters(
         render_context->device, render_context->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_VSYNC);
 
     // size_t capsule_size = 0;
-    CoreMesh capsule = core_create_capsule_mesh(0.1f, 0.4f, 10, 10);
+    CoreMesh capsule = create_cube_mesh(); // core_create_capsule_mesh(0.1f, 0.4f, 10, 10);
 
     ecs_entity_t test_e = ecs_entity(ctx->ecs, {.name = "test_mesh"});
     ecs_set(ctx->ecs,
@@ -85,6 +68,21 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
 
     default_pipeline = create_default_pipeline(ctx->ecs, render_context);
 
+    int width, height;
+    SDL_GetWindowSizeInPixels(render_context->window, &width, &height);
+    SDL_GPUTextureCreateInfo depth_ci = {
+        .type                 = SDL_GPU_TEXTURETYPE_2D,
+        .width                = width,
+        .height               = height,
+        .layer_count_or_depth = 1,
+        .num_levels           = 1,
+        .format               = SDL_GPU_TEXTUREFORMAT_D16_UNORM,
+        .usage                = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET,
+    };
+    depth_texture = SDL_CreateGPUTexture(render_context->device, &depth_ci);
+
+    ECS_QUERY(ctx->ecs, cameras, core.CoreCamera);
+
     camera_query =
         ecs_query(ctx->ecs, {.expr = "[in] core.CoreCamera, [in] core.CorePosition", .cache_kind = EcsQueryCacheAuto});
     mesh_query = ecs_query(
@@ -92,7 +90,7 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
         {.expr = "[in] core.CoreMesh, [in] core.renderer.CoreMeshRenderInfo", .cache_kind = EcsQueryCacheAuto});
 
     ecs_entity_t cam = ecs_entity(ctx->ecs, {.name = "main_camera"});
-    ecs_set(ctx->ecs, cam, CorePosition, {0.0f, 0.0f, -10.0f});
+    ecs_set(ctx->ecs, cam, CorePosition, {0.0f, 5.0f, -5.0f});
     ecs_set(ctx->ecs,
             cam,
             CoreCamera,
@@ -157,6 +155,16 @@ void render_frame(ecs_iter_t* it) {
     colorTargetInfo.load_op                = SDL_GPU_LOADOP_CLEAR;
     colorTargetInfo.store_op               = SDL_GPU_STOREOP_DONT_CARE;
 
+    SDL_GPUDepthStencilTargetInfo depth_target_info = {0};
+    depth_target_info.texture                       = depth_texture;
+    depth_target_info.cycle                         = true;
+    depth_target_info.clear_depth                   = 1.0f;
+    depth_target_info.clear_stencil                 = 0;
+    depth_target_info.load_op                       = SDL_GPU_LOADOP_CLEAR;
+    depth_target_info.store_op                      = SDL_GPU_STOREOP_STORE;
+    depth_target_info.stencil_load_op               = SDL_GPU_LOADOP_CLEAR;
+    depth_target_info.stencil_store_op              = SDL_GPU_STOREOP_STORE;
+
     // Render scene from every camera view
     while(ecs_query_next(&camera_it)) {
         CoreCamera* camera            = ecs_field(&camera_it, CoreCamera, 0);
@@ -164,11 +172,11 @@ void render_frame(ecs_iter_t* it) {
 
         mat4 cam[2] = {0};
 
-        glm_perspective(45.0f, 1280.0f / 720.0f, 0.01f, 100.0f, cam[0]);
-        glm_lookat(*camera_position, (float[]){0.0f, 0.0f, 0.0f}, camera->up, cam[1]);
+        glm_perspective(45.0f, 1280.0f / 720.0f, 0.01f, 1000.0f, cam[0]);
+        glm_lookat_rh_zo(*camera_position, (float[]){0.0f, 0.0f, 0.0f}, camera->up, cam[1]);
         SDL_PushGPUVertexUniformData(cmdbuf, 0, &cam, sizeof(mat4) * 2);
 
-        SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
+        SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depth_target_info);
         if(NULL == render_pass) {
             titus_log_error("Failed to begin render pass: %s", SDL_GetError());
             return;
@@ -200,3 +208,187 @@ void render_frame(ecs_iter_t* it) {
 
     return;
 }
+
+core_render_context* create_render_context(SDL_Window* window, ecs_world_t* ecs) {
+    core_render_context* render_context = ecs_singleton_ensure(ecs, core_render_context);
+
+    SDL_GPUDevice* gpu_device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, "vulkan");
+    if(NULL == gpu_device) {
+        titus_log_error("Error initializing GPU device from SDL: %s", SDL_GetError());
+        return NULL;
+    }
+
+    if(NULL == window) {
+        titus_log_error("Application window is null");
+        return NULL;
+    }
+
+    if(!SDL_ClaimWindowForGPUDevice(gpu_device, window)) {
+        titus_log_error("Failed to claim GPU device for window: %s", SDL_GetError());
+        return NULL;
+    }
+
+    render_context->window = window;
+    render_context->device = gpu_device;
+
+    return render_context;
+}
+
+CoreMesh create_cube_mesh() {
+    CoreMesh mesh;
+
+    // Define the 8 unique vertex positions of the cube
+    vec3 positions[] = {
+        {-0.5f, -0.5f, -0.5f}, // 0
+        {0.5f, -0.5f, -0.5f},  // 1
+        {0.5f, 0.5f, -0.5f},   // 2
+        {-0.5f, 0.5f, -0.5f},  // 3
+        {-0.5f, -0.5f, 0.5f},  // 4
+        {0.5f, -0.5f, 0.5f},   // 5
+        {0.5f, 0.5f, 0.5f},    // 6
+        {-0.5f, 0.5f, 0.5f}    // 7
+    };
+
+    // Define the 6 face normals of the cube
+    vec3 normals[] = {
+        {0.0f, 0.0f, -1.0f}, // Back face
+        {0.0f, 0.0f, 1.0f},  // Front face
+        {-1.0f, 0.0f, 0.0f}, // Left face
+        {1.0f, 0.0f, 0.0f},  // Right face
+        {0.0f, -1.0f, 0.0f}, // Bottom face
+        {0.0f, 1.0f, 0.0f}   // Top face
+    };
+
+    // Define the 12 triangles (2 per face) using the 8 unique vertices
+    uint32_t face_indices[] = {
+        // Back face
+        0,
+        1,
+        2,
+        2,
+        3,
+        0,
+
+        // Front face
+        4,
+        5,
+        6,
+        6,
+        7,
+        4,
+
+        // Left face
+        0,
+        3,
+        7,
+        7,
+        4,
+        0,
+
+        // Right face
+        1,
+        5,
+        6,
+        6,
+        2,
+        1,
+
+        // Bottom face
+        0,
+        1,
+        5,
+        5,
+        4,
+        0,
+
+        // Top face
+        3,
+        2,
+        6,
+        6,
+        7,
+        3,
+    };
+
+    // For flat shading, each face has its own set of vertices with the same normal
+    mesh.vertex_count = 36; // 6 faces * 6 vertices per face (2 triangles)
+    mesh.vertices     = (CoreVertexPositionNormal*)malloc(mesh.vertex_count * sizeof(CoreVertexPositionNormal));
+
+    mesh.index_count = 36; // 12 triangles * 3 indices per triangle
+    mesh.indices     = (uint32_t*)malloc(mesh.index_count * sizeof(uint32_t));
+
+    // Create vertices and assign normals
+    for(size_t i = 0; i < mesh.index_count; ++i) {
+        uint32_t vertex_index = face_indices[i];
+        memcpy(mesh.vertices[i].position, positions[vertex_index], sizeof(vec3));
+
+        // Assign the normal based on the face
+        if(i < 6) {
+            memcpy(mesh.vertices[i].normal, normals[0], sizeof(vec3)); // Back face
+        } else if(i < 12) {
+            memcpy(mesh.vertices[i].normal, normals[1], sizeof(vec3)); // Front face
+        } else if(i < 18) {
+            memcpy(mesh.vertices[i].normal, normals[2], sizeof(vec3)); // Left face
+        } else if(i < 24) {
+            memcpy(mesh.vertices[i].normal, normals[3], sizeof(vec3)); // Right face
+        } else if(i < 30) {
+            memcpy(mesh.vertices[i].normal, normals[4], sizeof(vec3)); // Bottom face
+        } else {
+            memcpy(mesh.vertices[i].normal, normals[5], sizeof(vec3)); // Top face
+        }
+
+        // Assign indices (just a linear sequence for flat shading)
+        mesh.indices[i] = i;
+    }
+
+    return mesh;
+}
+
+/*
+
+    // clang-format off
+    mesh.vertices = (CoreVertexPositionNormal[]){
+        {-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
+         {0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
+         {0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
+         {0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
+        {-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
+        {-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
+
+        {-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
+         {0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
+         {0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
+         {0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
+        {-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
+        {-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
+
+        {-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f},
+        {-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f},
+        {-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f},
+        {-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f},
+        {-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f},
+        {-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f},
+
+         {0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f},
+         {0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f},
+         {0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f},
+         {0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f},
+         {0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f},
+         {0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f},
+
+        {-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f},
+         {0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f},
+         {0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f},
+         {0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f},
+        {-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f},
+        {-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f},
+
+        {-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f},
+         {0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f},
+         {0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f},
+         {0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f},
+        {-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f},
+        {-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f},
+    };
+    // clang-format on
+*/

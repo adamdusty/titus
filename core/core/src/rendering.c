@@ -27,7 +27,7 @@ CoreMesh core_create_capsule_mesh(float radius, float height, uint32_t slices, u
     mesh.index_count = slices * total_stacks * 6;
 
     // Allocate memory
-    mesh.vertices = (CoreVertexPosition*)malloc(mesh.vertex_count * sizeof(CoreVertexPosition));
+    mesh.vertices = (CoreVertexPositionNormal*)malloc(mesh.vertex_count * sizeof(CoreVertexPositionNormal));
     mesh.indices  = (uint32_t*)malloc(mesh.index_count * sizeof(uint32_t));
 
     if(!mesh.vertices || !mesh.indices) {
@@ -85,9 +85,29 @@ CoreMesh core_create_capsule_mesh(float radius, float height, uint32_t slices, u
             float x = stack_radius * cosf(phi);
             float z = stack_radius * sinf(phi);
 
-            mesh.vertices[vertex_index].x = x;
-            mesh.vertices[vertex_index].y = y;
-            mesh.vertices[vertex_index].z = z;
+            mesh.vertices[vertex_index].position[0] = x;
+            mesh.vertices[vertex_index].position[1] = y;
+            mesh.vertices[vertex_index].position[2] = z;
+
+            /* I have no idea if these normals are correct. I'm going to add lighting since I have to do that anyway. */
+            // Calculate normals
+            if(i < hemisphere_stacks) {
+                // Bottom hemisphere normals
+                mesh.vertices[vertex_index].normal[0] = cosf(theta) * cosf(phi);
+                mesh.vertices[vertex_index].normal[1] = -sinf(phi);
+                mesh.vertices[vertex_index].normal[2] = cosf(phi) * sinf(theta);
+            } else if(i <= hemisphere_stacks + cylinder_stacks) {
+                // Cylinder normals
+                mesh.vertices[vertex_index].normal[0] = cosf(theta);
+                mesh.vertices[vertex_index].normal[1] = 0.0f;
+                mesh.vertices[vertex_index].normal[2] = sinf(phi);
+            } else {
+                // Top hemisphere normals
+                mesh.vertices[vertex_index].normal[0] = cosf(theta) * cosf(phi);
+                mesh.vertices[vertex_index].normal[1] = sinf(phi);
+                mesh.vertices[vertex_index].normal[2] = cosf(phi) * sinf(theta);
+            }
+            /* ************************************************************* */
 
             vertex_index++;
         }

@@ -24,8 +24,11 @@ function(ADD_MODULE module_name module_target has_resources)
             COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_FILE_DIR:${module_target}>/resources modules/${module_name}/resources
         )
     endif(has_resources)
+
 endfunction(ADD_MODULE module_name module_target)
 
 ADD_MODULE("core-core" core_module FALSE)
 ADD_MODULE("core-input" core_input FALSE)
 ADD_MODULE("core-renderer" core_renderer TRUE)
+
+add_dependencies(titus core_module core_input core_renderer)

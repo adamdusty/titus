@@ -46,18 +46,29 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
             (SDL_GPUVertexBufferDescription[]){
                 (SDL_GPUVertexBufferDescription){
                     .slot               = 0,
-                    .pitch              = sizeof(CoreVertexPosition),
+                    .pitch              = sizeof(CoreVertexPositionNormal),
                     .input_rate         = SDL_GPU_VERTEXINPUTRATE_VERTEX,
                     .instance_step_rate = 0,
                 },
             },
-        .num_vertex_attributes = 1,
+        .num_vertex_attributes = 2,
         .vertex_attributes =
             (SDL_GPUVertexAttribute[]){
                 {.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3, .location = 0, .offset = 0, .buffer_slot = 0},
+                {.format      = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
+                 .location    = 1,
+                 .offset      = sizeof(float) * 3,
+                 .buffer_slot = 0},
             },
     };
     ci.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+
+    ci.depth_stencil_state = (SDL_GPUDepthStencilState){
+        .enable_depth_test   = true,
+        .enable_depth_write  = true,
+        .enable_stencil_test = false,
+        .compare_op          = SDL_GPU_COMPAREOP_LESS,
+    };
 
     ci.rasterizer_state           = (SDL_GPURasterizerState){0};
     ci.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
@@ -67,7 +78,9 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
     ci.depth_stencil_state = (SDL_GPUDepthStencilState){0};
 
     ci.target_info = (SDL_GPUGraphicsPipelineTargetInfo){
-        .num_color_targets = 1,
+        .has_depth_stencil_target = true,
+        .depth_stencil_format     = SDL_GPU_TEXTUREFORMAT_D16_UNORM,
+        .num_color_targets        = 1,
         .color_target_descriptions =
             (SDL_GPUColorTargetDescription[]){
                 {.format = SDL_GetGPUSwapchainTextureFormat(context->device, context->window)},

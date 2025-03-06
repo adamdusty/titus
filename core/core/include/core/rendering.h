@@ -11,14 +11,13 @@ typedef struct CoreCamera {
     vec3 up;
 } CoreCamera;
 
-typedef struct CoreVertexPosition {
-    float x;
-    float y;
-    float z;
-} CoreVertexPosition;
+typedef struct CoreVertexPositionNormal {
+    vec3 position;
+    vec3 normal;
+} CoreVertexPositionNormal;
 
 typedef struct CoreMesh {
-    CoreVertexPosition* vertices;
+    CoreVertexPositionNormal* vertices;
     size_t vertex_count;
     uint32_t* indices;
     size_t index_count;

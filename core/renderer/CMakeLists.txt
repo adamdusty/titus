@@ -52,6 +52,6 @@ set_target_properties(
     OUTPUT_NAME renderer
 )
 
-add_custom_command(TARGET core_renderer POST_BUILD
+add_custom_target(shaders ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/resources ${CMAKE_CURRENT_BINARY_DIR}/resources
 )

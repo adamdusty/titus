@@ -11,7 +11,7 @@ build:
 
 [linux]
 build:
-    time cmake --build --preset dev
+    time cmake --build --preset dev --target all
 
 configure:
     cmake --preset dev
