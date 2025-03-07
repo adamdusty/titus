@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <titus/sdk.h>
 
-
 CoreMesh create_cube_mesh();
 
 static SDL_GPUGraphicsPipeline* default_pipeline = NULL;
@@ -119,8 +118,21 @@ CORE_RENDERER_EXPORT void titus_initialize(const titus_application_context* ctx)
 
 CORE_RENDERER_EXPORT void titus_deinitialize(titus_application_context* ctx) {
     titus_log_info("Deinitializing core.renderer");
-
     const core_render_context* rend = ecs_singleton_get(ctx->ecs, core_render_context);
+
+    ecs_iter_t mesh_info_iter = ecs_query_iter(ctx->ecs, mesh_query);
+    while(ecs_iter_next(&mesh_info_iter)) {
+        CoreMesh* _            = ecs_field(&mesh_info_iter, CoreMesh, 0);
+        CoreMeshRenderInfo* ri = ecs_field(&mesh_info_iter, CoreMeshRenderInfo, 1);
+
+        for(int i = 0; i < mesh_info_iter.count; i++) {
+            SDL_ReleaseGPUBuffer(rend->device, ri->vertex_buffer);
+            SDL_ReleaseGPUBuffer(rend->device, ri->index_buffer);
+        }
+    }
+
+    SDL_ReleaseGPUTexture(rend->device, depth_texture);
+
     SDL_ReleaseGPUGraphicsPipeline(rend->device, default_pipeline);
     SDL_DestroyGPUDevice(rend->device);
 }

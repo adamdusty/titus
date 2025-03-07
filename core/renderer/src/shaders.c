@@ -92,5 +92,8 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
         titus_log_error("Failed to create pipeline: %s", SDL_GetError());
     }
 
+    SDL_ReleaseGPUShader(context->device, vert_shader);
+    SDL_ReleaseGPUShader(context->device, frag_shader);
+
     return pipeline;
 }
