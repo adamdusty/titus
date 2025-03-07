@@ -11,8 +11,6 @@
 #include <string.h>
 #include <yyjson.h>
 
-#include <dlfcn.h>
-
 #ifdef __linux__
 #define SHARED_OBJECT_FILE_EXT "so"
 #elif defined(_WIN32)

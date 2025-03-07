@@ -1,7 +1,9 @@
 #pragma once
 
+#include "core/export.h"
 #include "core/input.h"
 #include "core/rendering.h"
+
 
 #include <cglm/cglm.h>
 

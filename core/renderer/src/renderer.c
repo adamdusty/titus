@@ -1,7 +1,7 @@
 #include "components.h"
 #include "context.h"
-#include "core/export.h"
 #include "gpu.h"
+#include "renderer/export.h"
 #include "shaders.h"
 #include <SDL3/SDL.h>
 #include <cglm/cglm.h>
@@ -10,6 +10,7 @@
 #include <core/core.h>
 #include <stdlib.h>
 #include <titus/sdk.h>
+
 
 CoreMesh create_cube_mesh();
 
@@ -35,7 +36,7 @@ void rendererImport(ecs_world_t* ecs) {
     ECS_SYSTEM_DEFINE(ecs, render_frame, EcsPostUpdate, core.renderer.core_render_context($));
 }
 
-CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
+CORE_RENDERER_EXPORT void titus_initialize(const titus_application_context* ctx) {
     titus_log_info("Initializing core.renderer module");
 
     ecs_entity_t m = ecs_import(ctx->ecs, rendererImport, "core.renderer");
@@ -116,7 +117,7 @@ CORE_EXPORT void titus_initialize(const titus_application_context* ctx) {
     }
 }
 
-CORE_EXPORT void titus_deinitialize(titus_application_context* ctx) {
+CORE_RENDERER_EXPORT void titus_deinitialize(titus_application_context* ctx) {
     titus_log_info("Deinitializing core.renderer");
 
     const core_render_context* rend = ecs_singleton_get(ctx->ecs, core_render_context);

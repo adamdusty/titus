@@ -8,14 +8,14 @@ find_package(titus CONFIG REQUIRED)
 endif(NOT TARGET titus::sdk)
 
 add_library(core_renderer MODULE)
-target_link_libraries(core_renderer PRIVATE titus::sdk core_headers)# core_module)
+target_link_libraries(core_renderer PRIVATE titus::sdk core_module)
 target_sources(core_renderer
     PUBLIC
-        FILE_SET core_export_header
+        FILE_SET core_renderer_export_header
         TYPE     HEADERS
         BASE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/export"
         FILES
-            "${CMAKE_CURRENT_BINARY_DIR}/export/core/export.h"
+            "${CMAKE_CURRENT_BINARY_DIR}/export/renderer/export.h"
     PRIVATE
         FILE_SET core_renderer_headers
         TYPE     HEADERS
@@ -36,8 +36,8 @@ configure_file(module.json module.json)
 include(GenerateExportHeader)
 generate_export_header(
     core_renderer
-    BASE_NAME core
-    EXPORT_FILE_NAME "export/core/export.h"
+    BASE_NAME core_renderer
+    EXPORT_FILE_NAME "export/renderer/export.h"
     CUSTOM_CONTENT_FROM_VARIABLE pragma_suppress_c4251
 )
 
