@@ -6,10 +6,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#ifndef CORE_MODULE_EXPORT
-#error "No export macro
-#endif
-
 typedef struct CoreCamera {
     vec3 forward;
     vec3 up;
