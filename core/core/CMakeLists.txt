@@ -7,8 +7,29 @@ if(NOT TARGET titus::sdk)
 find_package(titus CONFIG REQUIRED)
 endif(NOT TARGET titus::sdk)
 
-add_library(core_module SHARED)
-target_link_libraries(core_module PRIVATE titus::sdk)
+add_library(core_components SHARED)
+target_link_libraries(core_components PRIVATE titus::sdk)
+target_sources(core_components
+    PUBLIC
+        FILE_SET core_module_export_header
+        TYPE     HEADERS
+        BASE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/export"
+        FILES
+            "${CMAKE_CURRENT_BINARY_DIR}/export/core/export.h"
+    PUBLIC
+        FILE_SET core_components_headers
+        TYPE HEADERS
+        BASE_DIRS include
+        FILES
+            "include/core/components.h"
+            "include/core/input.h"
+            "include/core/rendering.h"
+    PRIVATE
+        src/components.c
+)
+
+add_library(core_module MODULE)
+target_link_libraries(core_module PRIVATE core_components titus::sdk)
 target_compile_options(core_module PRIVATE ${DEBUG_COMPILER_FLAGS})
 target_sources(core_module
     PUBLIC
@@ -23,12 +44,9 @@ target_sources(core_module
         BASE_DIRS include
         FILES
             "include/core/core.h"
-            "include/core/components.h"
-            "include/core/input.h"
-            "include/core/rendering.h"
     PRIVATE
         src/core.c
-        src/rendering.c
+        # src/rendering.c
 )
 
 configure_file(module.json module.json)
@@ -39,6 +57,12 @@ generate_export_header(
     BASE_NAME core_module
     EXPORT_FILE_NAME "export/core/export.h"
     CUSTOM_CONTENT_FROM_VARIABLE pragma_suppress_c4251
+)
+
+set_target_properties(
+    core_components PROPERTIES
+    C_VISIBILITY_PRESET "hidden"
+    VISIBILITY_INLINES_HIDDEN YES
 )
 
 set_target_properties(
