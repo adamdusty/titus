@@ -202,9 +202,9 @@ bool titus_parse_manifest(char* data, size_t len, titus_module_manifest* out) {
         }
 
         if(yyjson_equals_str(key, "version")) {
-            out->version.major      = yyjson_get_int(yyjson_obj_get(val, "major"));
-            out->version.minor      = yyjson_get_int(yyjson_obj_get(val, "minor"));
-            out->version.patch      = yyjson_get_int(yyjson_obj_get(val, "patch"));
+            out->version.major      = yyjson_get_uint(yyjson_obj_get(val, "major"));
+            out->version.minor      = yyjson_get_uint(yyjson_obj_get(val, "minor"));
+            out->version.patch      = yyjson_get_uint(yyjson_obj_get(val, "patch"));
             out->version.annotation = sdsnew(yyjson_get_str(yyjson_obj_get(val, "annotation")));
         }
     }

@@ -35,6 +35,7 @@ int main(int, char*[]) {
 
     titus_config app_config = titus_default_config();
     initialize_logging(&app_config);
+    // titus_log_error("hello world");
 
     titus_application_context context = {0};
     initialize_application_context(&context);
@@ -68,7 +69,7 @@ int main(int, char*[]) {
 
     /* Clean up */
     // Deinit modules in reverse order
-    for(int i = shlen(modules) - 1; i >= 0; i--) {
+    for(ptrdiff_t i = shlen(modules) - 1; i >= 0; i--) {
         titus_log_info("Freeing module: %s", modules[i].key);
         titus_free_module(&modules[i].value);
     }
@@ -91,6 +92,14 @@ void initialize_logging(const titus_config* config) {
 #else
     SDL_SetHint(SDL_HINT_LOGGING, "app=debug");
 #endif
+    // clang-format off
+    SDL_SetLogPriorityPrefix(SDL_LOG_PRIORITY_VERBOSE, "[VERBOSE] ");
+    SDL_SetLogPriorityPrefix(SDL_LOG_PRIORITY_TRACE,   "[TRACE]   ");
+    SDL_SetLogPriorityPrefix(SDL_LOG_PRIORITY_DEBUG,   "[DEBUG]   ");
+    SDL_SetLogPriorityPrefix(SDL_LOG_PRIORITY_INFO,    "[INFO]    ");
+    SDL_SetLogPriorityPrefix(SDL_LOG_PRIORITY_WARN,    "[WARN]    ");
+    SDL_SetLogPriorityPrefix(SDL_LOG_PRIORITY_ERROR,   "[ERROR]   ");
+    // clang-format on
     sdsfree(log_level);
     // SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG);
     // SDL_SetLogPriority(SDL_LOG_CATEGORY_VIDEO, SDL_LOG_PRIORITY_TRACE);
@@ -108,6 +117,7 @@ void initialize_application_context(titus_application_context* ctx) {
     ecs_entity_t window = TITUS_REGISTER_COMPONENT_NAMED(ctx->ecs, "runtime", "window", SDL_Window*);
     ecs_set_id(ctx->ecs, window, window, sizeof(SDL_Window*), &ctx->window);
 }
+
 void deinitialize_application_context(titus_application_context* ctx) {
     ecs_fini(ctx->ecs);
     SDL_DestroyWindow(ctx->window);
