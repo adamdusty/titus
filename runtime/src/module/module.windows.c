@@ -3,9 +3,8 @@
 #include "assert/assert.h"
 #include <SDL3/SDL.h>
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#undef WIN32_LEAN_AND_MEAN
+// Define load library prototype so we don't have to include all of windows.h
+__declspec(dllimport) void* __stdcall LoadLibraryA(const char*);
 
 titus_module titus_load_module(titus_module_load_info* load_info) {
     TITUS_ASSERT(load_info != NULL); // precondition: NULL load_info
@@ -18,7 +17,7 @@ titus_module titus_load_module(titus_module_load_info* load_info) {
     titus_log_info("Attempting to load binary from: %s", load_info->binary);
     if(SDL_GetPathInfo(load_info->binary, NULL)) {
         module.binary_path = load_info->binary;
-        module.handle      = (SDL_SharedObject*)LoadLibrary(load_info->binary);
+        module.handle      = (SDL_SharedObject*)LoadLibraryA(load_info->binary);
 
         if(NULL == module.handle) {
             titus_log_error("Failed to load object");
