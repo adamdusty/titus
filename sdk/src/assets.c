@@ -1,9 +1,11 @@
 #include "titus/assets/assets.h"
 
+#include "titus/assert/assert.h"
 #include "titus/ds/stb_ds.h"
 #include "titus/log/log.h"
 #include "titus/module/module.h"
 #include <SDL3/SDL.h>
+
 
 /// Using the module namespace and name, looks up the module's resource path and returns
 /// the path appended to the resource directory, if a file exists at that path.
@@ -14,7 +16,10 @@
 /// @return The path to the resource if it exists. NULL if nothing exists at the path or there is an error.
 /// @note The `char*` returned is actually an `sds` from `titus/sds/sds.h`. It should be freed by calling `sdsfree()`
 /// when no longer needed
-char* titus_get_asset_path(ecs_world_t* ecs, char* namespace, char* name, char* path) {
+sds titus_get_asset_path(ecs_world_t* ecs, char* namespace, char* name, char* path) {
+    TITUS_ASSERT(ecs != NULL);                                       // precondition: Attempting to read from NULL
+    TITUS_ASSERT(namespace != NULL && name != NULL && path != NULL); // precondition
+
     ecs_entity_t module_map_component = ecs_lookup(ecs, "runtime:module_map");
     if(module_map_component == 0) {
         titus_log_error("Failed to find module map component id.");

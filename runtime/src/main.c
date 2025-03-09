@@ -2,15 +2,13 @@
     - Module load order
  */
 
-#include "assert/assert.h"
 #include "config/config.h"
 #include "module/module.h"
-#include "titus/ds/stb_ds.h"
-#include "titus/sds/sds.h"
 #include <SDL3/SDL.h>
 #include <flecs.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <titus/sdk.h>
 
 typedef int quit_t;
 
@@ -113,8 +111,20 @@ void initialize_application_context(titus_application_context* ctx) {
     ctx->window = SDL_CreateWindow("Titus", 1280, 720, SDL_WINDOW_RESIZABLE);
     ctx->ecs    = ecs_init();
 
-    TITUS_REGISTER_COMPONENT_NAMED(ctx->ecs, "runtime", "module_map", module_kv*);
-    ecs_entity_t window = TITUS_REGISTER_COMPONENT_NAMED(ctx->ecs, "runtime", "window", SDL_Window*);
+    ecs_component(ctx->ecs,
+                  {
+                      .type.alignment = alignof(module_kv*),
+                      .type.size      = sizeof(module_kv*),
+                      .entity         = ecs_entity(ctx->ecs, {.name = "runtime:module_map"}),
+                  });
+
+    ecs_entity_t window = ecs_component(ctx->ecs,
+                                        {
+                                            .type.alignment = alignof(SDL_Window*),
+                                            .type.size      = sizeof(SDL_Window*),
+                                            .entity         = ecs_entity(ctx->ecs, {.name = "runtime:window"}),
+                                        });
+
     ecs_set_id(ctx->ecs, window, window, sizeof(SDL_Window*), &ctx->window);
 }
 

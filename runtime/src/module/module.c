@@ -2,14 +2,15 @@
 
 #include "module/module.h"
 
-#include "assert/assert.h"
 #include "titus/ds/stb_ds.h"
 #include "titus/sds/sds.h"
 #include <SDL3/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <titus/assert/assert.h>
 #include <yyjson.h>
+
 
 #ifdef __linux__
 #define SHARED_OBJECT_FILE_EXT "so"

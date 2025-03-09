@@ -1,8 +1,9 @@
 #include "module.h"
 
-#include "assert/assert.h"
 #include <SDL3/SDL.h>
 #include <dlfcn.h>
+#include <titus/assert/assert.h>
+
 
 titus_module titus_load_module(titus_module_load_info* load_info) {
     TITUS_ASSERT(load_info != NULL); // precondition: NULL load_info

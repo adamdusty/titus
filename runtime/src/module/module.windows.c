@@ -1,7 +1,8 @@
 #include "module.h"
 
-#include "assert/assert.h"
 #include <SDL3/SDL.h>
+#include <titus/assert/assert.h>
+
 
 // Define load library prototype so we don't have to include all of windows.h
 __declspec(dllimport) void* __stdcall LoadLibraryA(const char*);

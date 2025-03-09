@@ -16,14 +16,13 @@ target_sources(titus_sdk
         FILES
             "include/titus/sdk.h"
             "include/titus/context/context.h"
-            "include/titus/ecs/ecs.h"
             "include/titus/log/log.h"
             "include/titus/module/module.h"
             "include/titus/sds/sds.h"
             "include/titus/ds/stb_ds.h"
+            "include/titus/assert/assert.h"
     PRIVATE
         src/sdk.c
-        src/ecs.c
         src/log.c
         src/assets.c
         src/sds.c

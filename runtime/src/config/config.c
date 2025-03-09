@@ -1,6 +1,6 @@
 #include "config/config.h"
 
-#include "assert/assert.h"
+#include <titus/assert/assert.h>
 
 titus_config titus_default_config() {
     return (titus_config){
