@@ -15,7 +15,9 @@ titus_module titus_load_module(titus_module_load_info* load_info) {
     titus_log_info("Attempting to load binary from: %s", load_info->binary);
     if(SDL_GetPathInfo(load_info->binary, NULL)) {
         module.binary_path = load_info->binary;
-        module.handle      = (SDL_SharedObject*)dlopen(load_info->binary, RTLD_NOW | RTLD_GLOBAL);
+
+        dlerror(); // Clear dlerror
+        module.handle = (SDL_SharedObject*)dlopen(load_info->binary, RTLD_NOW | RTLD_GLOBAL);
 
         if(NULL == module.handle) {
             titus_log_error("Failed to load object: %s", dlerror());

@@ -8,7 +8,7 @@ find_package(titus CONFIG REQUIRED)
 endif(NOT TARGET titus::sdk)
 
 add_library(core_input MODULE)
-target_link_libraries(core_input PRIVATE titus::sdk core_components)
+target_link_libraries(core_input PRIVATE titus::sdk core_module)
 target_sources(core_input
     PUBLIC
         FILE_SET core_input_export_header
