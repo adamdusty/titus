@@ -6,32 +6,32 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct titus_module_version {
+typedef struct TitusModuleVersion {
     uint64_t major;
     uint64_t minor;
     uint64_t patch;
     sds annotation;
-} titus_module_version;
+} TitusModuleVersion;
 
-typedef struct titus_module_manifest {
+typedef struct TitusModuleManifest {
     sds namespace;
     sds name;
-    titus_module_version version;
+    TitusModuleVersion version;
     sds binary; // Filename of binary without extension
-} titus_module_manifest;
+} TitusModuleManifest;
 
-typedef struct titus_module_load_info {
-    titus_module_manifest manifest;
+typedef struct TitusModuleLoadInfo {
+    TitusModuleManifest manifest;
     sds binary;    // Relative path to binary
     sds resources; // Relative path to resources directory
     sds base;      // Module base directory
-} titus_module_load_info;
+} TitusModuleLoadInfo;
 
-typedef void (*titus_initialize_proc)(const titus_application_context*);
-typedef void (*titus_deinitialize_proc)(const titus_application_context*);
+typedef void (*titus_initialize_proc)(const TitusApplicationContext*);
+typedef void (*titus_deinitialize_proc)(const TitusApplicationContext*);
 
-typedef struct titus_module {
-    titus_module_manifest manifest;
+typedef struct TitusModule {
+    TitusModuleManifest manifest;
     SDL_SharedObject* handle;
     sds directory_path;
     sds binary_path;
@@ -39,9 +39,9 @@ typedef struct titus_module {
 
     titus_initialize_proc initialize;
     titus_deinitialize_proc deinitialize;
-} titus_module;
+} TitusModule;
 
-typedef struct module_kv {
+typedef struct TitusModuleHashmapKV {
     char* key;
-    titus_module value;
-} module_kv;
+    TitusModule value;
+} TitusModuleHashmapKV;

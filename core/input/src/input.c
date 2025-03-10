@@ -21,7 +21,7 @@ CORE_INPUT_EXPORT void inputImport(ecs_world_t* ecs) {
     ECS_SYSTEM_DEFINE(ecs, process_input, EcsOnUpdate, core.CoreFrameInput);
 }
 
-CORE_INPUT_EXPORT void titus_initialize(titus_application_context* ctx) {
+CORE_INPUT_EXPORT void titus_initialize(TitusApplicationContext* ctx) {
     titus_log_info("Initializing core:input module");
 
     ecs_entity_t mod = ecs_import(ctx->ecs, inputImport, "core.input");
@@ -36,7 +36,7 @@ CORE_INPUT_EXPORT void titus_initialize(titus_application_context* ctx) {
     ecs_singleton_set(ctx->ecs, CoreFrameInput, {.count = 0, .events = {0}});
 }
 
-CORE_INPUT_EXPORT void titus_deinitialize(titus_application_context* ctx) {}
+CORE_INPUT_EXPORT void titus_deinitialize(TitusApplicationContext* ctx) {}
 
 void core_input_poll_system(ecs_iter_t* it) {
     CoreFrameInput* inp = ecs_field(it, CoreFrameInput, 0);

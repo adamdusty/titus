@@ -12,10 +12,10 @@
 
 typedef int quit_t;
 
-void initialize_logging(const titus_config* config);
-void initialize_application_context(titus_application_context* ctx);
-void deinitialize_application_context(titus_application_context* ctx);
-struct module_kv* load_modules(const titus_config* config, sds executable_direcory);
+void initialize_logging(const TitusConfig* config);
+void initialize_application_context(TitusApplicationContext* ctx);
+void deinitialize_application_context(TitusApplicationContext* ctx);
+struct TitusModuleHashmapKV* load_modules(const TitusConfig* config, sds executable_direcory);
 
 int main(int, char*[]) {
     SDL_SetAppMetadata("Titus", "0.1.0-alpha", "com.github.titus");
@@ -31,11 +31,11 @@ int main(int, char*[]) {
     }
     sds executable_directory_path = sdsnew(SDL_GetBasePath());
 
-    titus_config app_config = titus_default_config();
+    TitusConfig app_config = titus_default_config();
     initialize_logging(&app_config);
     // titus_log_error("hello world");
 
-    titus_application_context context = {0};
+    TitusApplicationContext context = {0};
     initialize_application_context(&context);
 
     /* Set up the explorer */
@@ -45,9 +45,9 @@ int main(int, char*[]) {
 
     ECS_COMPONENT(context.ecs, quit_t);
 
-    module_kv* modules = load_modules(&app_config, executable_directory_path);
-    ecs_entity_t mm    = ecs_lookup(context.ecs, "runtime:module_map");
-    ecs_set_id(context.ecs, mm, mm, sizeof(module_kv*), &modules);
+    TitusModuleHashmapKV* modules = load_modules(&app_config, executable_directory_path);
+    ecs_entity_t mm               = ecs_lookup(context.ecs, "runtime:module_map");
+    ecs_set_id(context.ecs, mm, mm, sizeof(TitusModuleHashmapKV*), &modules);
 
     for(int i = 0; i < shlen(modules); i++) {
         if(NULL != modules[i].value.initialize)
@@ -81,7 +81,7 @@ int main(int, char*[]) {
     return 0;
 }
 
-void initialize_logging(const titus_config* config) {
+void initialize_logging(const TitusConfig* config) {
     sds log_level = sdsnew("app=");
     log_level     = sdscat(log_level, config->log_level);
     titus_log_info("%s", log_level);
@@ -107,14 +107,14 @@ void initialize_logging(const titus_config* config) {
     // SDL_SetLogOutputFunction(titus_log_function, log);
 }
 
-void initialize_application_context(titus_application_context* ctx) {
+void initialize_application_context(TitusApplicationContext* ctx) {
     ctx->window = SDL_CreateWindow("Titus", 1280, 720, SDL_WINDOW_RESIZABLE);
     ctx->ecs    = ecs_init();
 
     ecs_component(ctx->ecs,
                   {
-                      .type.alignment = alignof(module_kv*),
-                      .type.size      = sizeof(module_kv*),
+                      .type.alignment = alignof(TitusModuleHashmapKV*),
+                      .type.size      = sizeof(TitusModuleHashmapKV*),
                       .entity         = ecs_entity(ctx->ecs, {.name = "runtime:module_map"}),
                   });
 
@@ -128,12 +128,12 @@ void initialize_application_context(titus_application_context* ctx) {
     ecs_set_id(ctx->ecs, window, window, sizeof(SDL_Window*), &ctx->window);
 }
 
-void deinitialize_application_context(titus_application_context* ctx) {
+void deinitialize_application_context(TitusApplicationContext* ctx) {
     ecs_fini(ctx->ecs);
     SDL_DestroyWindow(ctx->window);
 }
 
-module_kv* load_modules(const titus_config* config, sds executable_directory) {
+TitusModuleHashmapKV* load_modules(const TitusConfig* config, sds executable_directory) {
     TITUS_ASSERT(config != NULL);
     TITUS_ASSERT(config->module_root_directory != NULL);
 
@@ -141,7 +141,7 @@ module_kv* load_modules(const titus_config* config, sds executable_directory) {
     module_path     = sdscatsds(module_path, executable_directory);
     module_path     = sdscat(module_path, config->module_root_directory);
 
-    titus_module_load_info* module_load_infos = titus_get_module_load_info_from_dir(module_path);
+    TitusModuleLoadInfo* module_load_infos = titus_get_module_load_info_from_dir(module_path);
     sdsfree(module_path);
 
     if(NULL == module_load_infos) {
@@ -150,12 +150,12 @@ module_kv* load_modules(const titus_config* config, sds executable_directory) {
         exit(EXIT_FAILURE);
     }
 
-    module_kv* module_map = NULL;
+    TitusModuleHashmapKV* module_map = NULL;
     for(int i = 0; i < arrlen(module_load_infos); i++) {
-        titus_module mod = titus_load_module(&module_load_infos[i]); // module_load_info gets moved into module here
-        sds key          = sdsdup(mod.manifest.namespace);
-        key              = sdscat(key, ":");
-        key              = sdscatsds(key, mod.manifest.name);
+        TitusModule mod = titus_load_module(&module_load_infos[i]); // module_load_info gets moved into module here
+        sds key         = sdsdup(mod.manifest.namespace);
+        key             = sdscat(key, ":");
+        key             = sdscatsds(key, mod.manifest.name);
         shput(module_map, key, mod);
     }
 

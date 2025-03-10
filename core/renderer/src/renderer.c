@@ -35,7 +35,7 @@ void rendererImport(ecs_world_t* ecs) {
     ECS_SYSTEM_DEFINE(ecs, render_frame, EcsPostUpdate, core.renderer.core_render_context($));
 }
 
-CORE_RENDERER_EXPORT void titus_initialize(const titus_application_context* ctx) {
+CORE_RENDERER_EXPORT void titus_initialize(const TitusApplicationContext* ctx) {
     titus_log_info("Initializing core.renderer module");
 
     ecs_entity_t m = ecs_import(ctx->ecs, rendererImport, "core.renderer");
@@ -116,7 +116,7 @@ CORE_RENDERER_EXPORT void titus_initialize(const titus_application_context* ctx)
     }
 }
 
-CORE_RENDERER_EXPORT void titus_deinitialize(titus_application_context* ctx) {
+CORE_RENDERER_EXPORT void titus_deinitialize(TitusApplicationContext* ctx) {
     titus_log_info("Deinitializing core.renderer");
     const core_render_context* rend = ecs_singleton_get(ctx->ecs, core_render_context);
 
