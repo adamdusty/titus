@@ -7,27 +7,6 @@ if(NOT TARGET titus::sdk)
 find_package(titus CONFIG REQUIRED)
 endif(NOT TARGET titus::sdk)
 
-# add_library(core_components SHARED)
-# target_link_libraries(core_components PRIVATE titus::sdk)
-# target_sources(core_components
-#     PUBLIC
-#         FILE_SET core_module_export_header
-#         TYPE     HEADERS
-#         BASE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/export"
-#         FILES
-#             "${CMAKE_CURRENT_BINARY_DIR}/export/core/export.h"
-#     PUBLIC
-#         FILE_SET core_components_headers
-#         TYPE HEADERS
-#         BASE_DIRS include
-#         FILES
-#             "include/core/components.h"
-#             "include/core/input.h"
-#             "include/core/rendering.h"
-#     PRIVATE
-#         src/components.c
-# )
-
 add_library(core_module SHARED)
 target_link_libraries(core_module PRIVATE titus::sdk)
 target_compile_options(core_module PRIVATE ${DEBUG_COMPILER_FLAGS})
@@ -44,13 +23,11 @@ target_sources(core_module
         BASE_DIRS include
         FILES
             "include/core/core.h"
-            "include/core/components.h"
             "include/core/input.h"
             "include/core/rendering.h"
     PRIVATE
         src/core.c
-        src/components.c
-        # src/rendering.c
+        src/rendering.c
 )
 
 configure_file(module.json module.json)
@@ -63,18 +40,10 @@ generate_export_header(
     CUSTOM_CONTENT_FROM_VARIABLE pragma_suppress_c4251
 )
 
-# set_target_properties(
-#     core_components PROPERTIES
-#     C_VISIBILITY_PRESET "hidden"
-#     VISIBILITY_INLINES_HIDDEN YES
-# )
-
 set_target_properties(
     core_module PROPERTIES
     C_VISIBILITY_PRESET "hidden"
     VISIBILITY_INLINES_HIDDEN YES
-    VERSION "${PROJECT_VERSION}"
-    SOVERSION "${PROJECT_VERSION_MAJOR}"
     PREFIX ""
     EXPORT_NAME core
     OUTPUT_NAME core
