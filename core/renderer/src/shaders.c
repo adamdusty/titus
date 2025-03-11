@@ -36,58 +36,57 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
 
     SDL_GPUShader* frag_shader = SDL_CreateGPUShader(context->device, &frag_ci);
 
-    SDL_GPUGraphicsPipelineCreateInfo ci = {0};
-
-    ci.vertex_shader      = vert_shader;
-    ci.fragment_shader    = frag_shader;
-    ci.vertex_input_state = (SDL_GPUVertexInputState){
-        .num_vertex_buffers = 1,
-        .vertex_buffer_descriptions =
-            (SDL_GPUVertexBufferDescription[]){
-                (SDL_GPUVertexBufferDescription){
-                    .slot               = 0,
-                    .pitch              = sizeof(CoreVertexPositionNormal),
-                    .input_rate         = SDL_GPU_VERTEXINPUTRATE_VERTEX,
-                    .instance_step_rate = 0,
-                },
+    SDL_GPUGraphicsPipelineCreateInfo pipeline_ci = {
+        .vertex_shader   = vert_shader,
+        .fragment_shader = frag_shader,
+        .vertex_input_state =
+            {
+                .vertex_buffer_descriptions =
+                    (SDL_GPUVertexBufferDescription[]){
+                        {
+                            .slot               = 0,
+                            .pitch              = sizeof(CoreVertexPositionNormal),
+                            .input_rate         = SDL_GPU_VERTEXINPUTRATE_VERTEX,
+                            .instance_step_rate = 0,
+                        },
+                    },
+                .num_vertex_buffers = 1,
+                .vertex_attributes =
+                    (SDL_GPUVertexAttribute[]){
+                        {.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3, .location = 0, .offset = 0, .buffer_slot = 0},
+                        {.format      = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
+                         .location    = 1,
+                         .offset      = sizeof(float) * 3,
+                         .buffer_slot = 0},
+                    },
+                .num_vertex_attributes = 2,
             },
-        .num_vertex_attributes = 2,
-        .vertex_attributes =
-            (SDL_GPUVertexAttribute[]){
-                {.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3, .location = 0, .offset = 0, .buffer_slot = 0},
-                {.format      = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
-                 .location    = 1,
-                 .offset      = sizeof(float) * 3,
-                 .buffer_slot = 0},
+        .primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
+        .rasterizer_state =
+            {
+                .fill_mode  = SDL_GPU_FILLMODE_FILL,
+                .cull_mode  = SDL_GPU_CULLMODE_NONE,
+                .front_face = SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE,
+            },
+        .depth_stencil_state =
+            {
+                .compare_op         = SDL_GPU_COMPAREOP_LESS,
+                .enable_depth_test  = true,
+                .enable_depth_write = true,
+            },
+        .target_info =
+            {
+                .color_target_descriptions =
+                    (SDL_GPUColorTargetDescription[]){
+                        {.format = SDL_GetGPUSwapchainTextureFormat(context->device, context->window)},
+                    },
+                .num_color_targets        = 1,
+                .depth_stencil_format     = SDL_GPU_TEXTUREFORMAT_D16_UNORM,
+                .has_depth_stencil_target = true,
             },
     };
-    ci.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 
-    ci.depth_stencil_state = (SDL_GPUDepthStencilState){
-        .enable_depth_test   = true,
-        .enable_depth_write  = true,
-        .enable_stencil_test = false,
-        .compare_op          = SDL_GPU_COMPAREOP_LESS,
-    };
-
-    ci.rasterizer_state           = (SDL_GPURasterizerState){0};
-    ci.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
-    ci.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
-
-    ci.multisample_state   = (SDL_GPUMultisampleState){0};
-    ci.depth_stencil_state = (SDL_GPUDepthStencilState){0};
-
-    ci.target_info = (SDL_GPUGraphicsPipelineTargetInfo){
-        .has_depth_stencil_target = true,
-        .depth_stencil_format     = SDL_GPU_TEXTUREFORMAT_D16_UNORM,
-        .num_color_targets        = 1,
-        .color_target_descriptions =
-            (SDL_GPUColorTargetDescription[]){
-                {.format = SDL_GetGPUSwapchainTextureFormat(context->device, context->window)},
-            },
-    };
-
-    SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(context->device, &ci);
+    SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(context->device, &pipeline_ci);
     if(NULL == pipeline) {
         titus_log_error("Failed to create pipeline: %s", SDL_GetError());
     }

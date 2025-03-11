@@ -35,4 +35,4 @@ typedef struct CoreMesh {
  * @param count[out] Set to the number of vec3f elements at the returned pointer
  * @return vec3f* Pointer to an array of positions.
  */
-CoreMesh CORE_MODULE_EXPORT core_create_capsule_mesh(float radius, float height, uint32_t slices, uint32_t stacks);
+CORE_MODULE_EXPORT CoreMesh core_create_capsule_mesh(float radius, float height, uint32_t slices, uint32_t stacks);
