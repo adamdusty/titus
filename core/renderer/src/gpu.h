@@ -1,7 +1,7 @@
 #pragma once
 
 #include <context.h>
-#include <core/components.h>
+#include <core/core.h>
 
 SDL_FColor from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 void upload_vertex_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const CoreMesh* mesh);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
-#include <core/components.h>
+#include <core/core.h>
 #include <flecs.h>
 
 typedef struct CoreMeshRenderInfo {

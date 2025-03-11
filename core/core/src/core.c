@@ -1,12 +1,17 @@
 #include "core/core.h"
 
-#include "core/components.h"
 #include "core/export.h"
 #include "core/input.h"
 #include "core/rendering.h"
 #include <titus/sdk.h>
 
-int core_module_version = 42;
+ECS_COMPONENT_DECLARE(CoreFrameInput) = 0;
+ECS_COMPONENT_DECLARE(CoreMesh)       = 0;
+ECS_COMPONENT_DECLARE(CoreCamera)     = 0;
+
+ECS_COMPONENT_DECLARE(CorePosition) = 0;
+ECS_COMPONENT_DECLARE(CoreScale)    = 0;
+ECS_COMPONENT_DECLARE(CoreRotation) = 0;
 
 CORE_MODULE_EXPORT void coreImport(ecs_world_t* ecs) {
     titus_log_info("Importing the core module");

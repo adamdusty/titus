@@ -1,11 +1,8 @@
 #include "input/export.h"
 #include <SDL3/SDL.h>
-#include <core/components.h>
 #include <core/core.h>
 #include <flecs.h>
 #include <titus/sdk.h>
-
-// extern __declspec(dllimport) int core_module_version;
 
 void core_input_poll_system(ecs_iter_t* it);
 void process_input(ecs_iter_t* it);
@@ -14,7 +11,6 @@ ECS_SYSTEM_DECLARE(core_input_poll_system);
 ECS_SYSTEM_DECLARE(process_input);
 
 CORE_INPUT_EXPORT void inputImport(ecs_world_t* ecs) {
-    titus_log_info("%d", core_module_version);
     ECS_MODULE(ecs, CoreInput);
 
     ECS_SYSTEM_DEFINE(ecs, core_input_poll_system, EcsPreUpdate, core.CoreFrameInput);

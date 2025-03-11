@@ -6,7 +6,6 @@
 #include <SDL3/SDL.h>
 #include <cglm/cglm.h>
 #include <cglm/clipspace/view_rh_zo.h>
-#include <core/components.h>
 #include <core/core.h>
 #include <stdlib.h>
 #include <titus/sdk.h>

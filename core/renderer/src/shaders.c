@@ -1,6 +1,6 @@
 #include "shaders.h"
 
-#include <core/components.h>
+#include <core/core.h>
 #include <titus/sdk.h>
 
 uint8_t* load_spirv(const char* path, size_t* size) {
