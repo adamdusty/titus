@@ -1,40 +1,16 @@
-#include "shaders.h"
+#include "phong/pipeline.h"
 
 #include "gpu.h"
-#include <core/core.h>
 #include <titus/sdk.h>
 
-SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_context* context) {
-    const char* vert_path = titus_get_asset_path(ecs, "core", "renderer", "shaders/vert.spv");
-    size_t vsize          = 0;
-    uint8_t* vert_bytes   = load_spirv(vert_path, &vsize);
-
-    SDL_GPUShaderCreateInfo vert_ci = {0};
-    vert_ci.code                    = vert_bytes;
-    vert_ci.code_size               = vsize;
-    vert_ci.format                  = SDL_GPU_SHADERFORMAT_SPIRV;
-    vert_ci.entrypoint              = "main";
-    vert_ci.stage                   = SDL_GPU_SHADERSTAGE_VERTEX;
-    vert_ci.num_uniform_buffers     = 1;
-
-    SDL_GPUShader* vert_shader = SDL_CreateGPUShader(context->device, &vert_ci);
-
-    const char* frag_path = titus_get_asset_path(ecs, "core", "renderer", "shaders/frag.spv");
-    size_t fsize          = 0;
-    uint8_t* frag_bytes   = load_spirv(frag_path, &fsize);
-
-    SDL_GPUShaderCreateInfo frag_ci = {0};
-    frag_ci.code                    = frag_bytes;
-    frag_ci.code_size               = fsize;
-    frag_ci.format                  = SDL_GPU_SHADERFORMAT_SPIRV;
-    frag_ci.entrypoint              = "main";
-    frag_ci.stage                   = SDL_GPU_SHADERSTAGE_FRAGMENT;
-
-    SDL_GPUShader* frag_shader = SDL_CreateGPUShader(context->device, &frag_ci);
+SDL_GPUGraphicsPipeline* phong_create_pipeline(SDL_GPUDevice* device,
+                                               SDL_GPUShader* vertex,
+                                               SDL_GPUShader* fragment,
+                                               SDL_GPUTextureFormat target_format) {
 
     SDL_GPUGraphicsPipelineCreateInfo pipeline_ci = {
-        .vertex_shader   = vert_shader,
-        .fragment_shader = frag_shader,
+        .vertex_shader   = vertex,
+        .fragment_shader = fragment,
         .vertex_input_state =
             {
                 .vertex_buffer_descriptions =
@@ -74,7 +50,7 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
             {
                 .color_target_descriptions =
                     (SDL_GPUColorTargetDescription[]){
-                        {.format = SDL_GetGPUSwapchainTextureFormat(context->device, context->window)},
+                        {.format = target_format},
                     },
                 .num_color_targets        = 1,
                 .depth_stencil_format     = SDL_GPU_TEXTUREFORMAT_D16_UNORM,
@@ -82,13 +58,10 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
             },
     };
 
-    SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(context->device, &pipeline_ci);
+    SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(device, &pipeline_ci);
     if(NULL == pipeline) {
         titus_log_error("Failed to create pipeline: %s", SDL_GetError());
     }
-
-    SDL_ReleaseGPUShader(context->device, vert_shader);
-    SDL_ReleaseGPUShader(context->device, frag_shader);
 
     return pipeline;
 }

@@ -3,6 +3,8 @@
 #include <context.h>
 #include <core/core.h>
 
+uint8_t* load_spirv(const char* path, size_t* size);
+
 SDL_FColor from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 void upload_vertex_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const CoreMesh* mesh);
 void upload_index_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const CoreMesh* mesh);
