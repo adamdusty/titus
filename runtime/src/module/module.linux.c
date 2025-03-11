@@ -17,7 +17,7 @@ titus_module titus_load_module(titus_module_load_info* load_info) {
         module.binary_path = load_info->binary;
 
         dlerror(); // Clear dlerror
-        module.handle = (SDL_SharedObject*)dlopen(load_info->binary, RTLD_NOW | RTLD_GLOBAL);
+        module.handle = (SDL_SharedObject*)dlopen(load_info->binary, RTLD_NOW | RTLD_LOCAL);
 
         if(NULL == module.handle) {
             titus_log_error("Failed to load object: %s", dlerror());
