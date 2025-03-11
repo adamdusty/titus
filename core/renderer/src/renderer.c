@@ -2,13 +2,14 @@
 #include "context.h"
 #include "gpu.h"
 #include "renderer/export.h"
-#include "shaders.h"
 #include <SDL3/SDL.h>
 #include <cglm/cglm.h>
 #include <cglm/clipspace/view_rh_zo.h>
 #include <core/core.h>
 #include <stdlib.h>
 #include <titus/sdk.h>
+
+#define logmsg(m) "[core/renderer] " m
 
 CoreMesh create_cube_mesh();
 
@@ -35,106 +36,10 @@ void rendererImport(ecs_world_t* ecs) {
 }
 
 CORE_RENDERER_EXPORT void titus_initialize(const TitusApplicationContext* ctx) {
-    titus_log_info("Initializing core.renderer module");
-
-    ecs_entity_t m = ecs_import(ctx->ecs, rendererImport, "core.renderer");
-    if(0 == m) {
-        titus_log_error("Failed to load module");
-        return;
-    }
-
-    core_render_context* render_context = create_render_context(ctx->window, ctx->ecs);
-    if(NULL == render_context) {
-        titus_log_error("Failed to create render context");
-    }
-
-    SDL_SetGPUSwapchainParameters(
-        render_context->device, render_context->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_VSYNC);
-
-    // size_t capsule_size = 0;
-    CoreMesh capsule = create_cube_mesh(); // core_create_capsule_mesh(1.0f, 2.0f, 10, 10);
-
-    ecs_entity_t test_e = ecs_entity(ctx->ecs, {.name = "test_mesh"});
-    ecs_set(ctx->ecs,
-            test_e,
-            CoreMesh,
-            {
-                .vertices     = capsule.vertices,
-                .vertex_count = capsule.vertex_count,
-                .indices      = capsule.indices,
-                .index_count  = capsule.index_count,
-            });
-
-    default_pipeline = create_default_pipeline(ctx->ecs, render_context);
-
-    int width, height;
-    SDL_GetWindowSizeInPixels(render_context->window, &width, &height);
-    SDL_GPUTextureCreateInfo depth_ci = {
-        .type                 = SDL_GPU_TEXTURETYPE_2D,
-        .width                = width,
-        .height               = height,
-        .layer_count_or_depth = 1,
-        .num_levels           = 1,
-        .format               = SDL_GPU_TEXTUREFORMAT_D16_UNORM,
-        .usage                = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET,
-    };
-    depth_texture = SDL_CreateGPUTexture(render_context->device, &depth_ci);
-
-    ECS_QUERY(ctx->ecs, cameras, core.CoreCamera);
-
-    camera_query =
-        ecs_query(ctx->ecs, {.expr = "[in] core.CoreCamera, [in] core.CorePosition", .cache_kind = EcsQueryCacheAuto});
-    mesh_query = ecs_query(
-        ctx->ecs,
-        {.expr = "[in] core.CoreMesh, [in] core.renderer.CoreMeshRenderInfo", .cache_kind = EcsQueryCacheAuto});
-
-    ecs_entity_t cam = ecs_entity(ctx->ecs, {.name = "main_camera"});
-    ecs_set(ctx->ecs, cam, CorePosition, {0, 0, -100.0f});
-    ecs_set(ctx->ecs,
-            cam,
-            CoreCamera,
-            {
-                .up      = {0, 1.0f, 0},
-                .forward = {0, 0, 1.0f},
-            });
-
-    ecs_query_t* mesh_no_info_q  = ecs_query(ctx->ecs, {.expr = "core.CoreMesh, !core.renderer.CoreMeshRenderInfo"});
-    ecs_iter_t mesh_no_info_iter = ecs_query_iter(ctx->ecs, mesh_no_info_q);
-    while(ecs_query_next(&mesh_no_info_iter)) {
-        CoreMesh* mesh = ecs_field(&mesh_no_info_iter, CoreMesh, 0);
-
-        for(int i = 0; i < mesh_no_info_iter.count; i++) {
-            CoreMeshRenderInfo* info = ecs_ensure(ctx->ecs, mesh_no_info_iter.entities[i], CoreMeshRenderInfo);
-            core_init_mesh_vertex_buffer(render_context->device, mesh, &info->vertex_buffer);
-            core_init_mesh_index_buffer(render_context->device, mesh, &info->index_buffer);
-
-            if(NULL == info->vertex_buffer || NULL == info->index_buffer) {
-                titus_log_error("Failed to create GPU buffers for mesh");
-            }
-        }
-    }
+    titus_log_info(logmsg("initializing"));
 }
 
-CORE_RENDERER_EXPORT void titus_deinitialize(TitusApplicationContext* ctx) {
-    titus_log_info("Deinitializing core.renderer");
-    const core_render_context* rend = ecs_singleton_get(ctx->ecs, core_render_context);
-
-    ecs_iter_t mesh_info_iter = ecs_query_iter(ctx->ecs, mesh_query);
-    while(ecs_iter_next(&mesh_info_iter)) {
-        CoreMesh* _            = ecs_field(&mesh_info_iter, CoreMesh, 0);
-        CoreMeshRenderInfo* ri = ecs_field(&mesh_info_iter, CoreMeshRenderInfo, 1);
-
-        for(int i = 0; i < mesh_info_iter.count; i++) {
-            SDL_ReleaseGPUBuffer(rend->device, ri->vertex_buffer);
-            SDL_ReleaseGPUBuffer(rend->device, ri->index_buffer);
-        }
-    }
-
-    SDL_ReleaseGPUTexture(rend->device, depth_texture);
-
-    SDL_ReleaseGPUGraphicsPipeline(rend->device, default_pipeline);
-    SDL_DestroyGPUDevice(rend->device);
-}
+CORE_RENDERER_EXPORT void titus_deinitialize(TitusApplicationContext* ctx) {}
 
 void render_frame(ecs_iter_t* it) {
     core_render_context* ctx = ecs_field(it, core_render_context, 0);

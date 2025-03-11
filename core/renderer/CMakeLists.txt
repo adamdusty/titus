@@ -21,14 +21,12 @@ target_sources(core_renderer
         TYPE     HEADERS
         BASE_DIRS src
         FILES
-            src/shaders.h
             src/gpu.h
             src/context.h
             src/components.h
             src/phong/pipeline.h
     PRIVATE
         src/renderer.c
-        src/shaders.c
         src/gpu.c
         src/phong/pipeline.c
 )

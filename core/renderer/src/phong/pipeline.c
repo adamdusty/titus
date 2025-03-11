@@ -1,6 +1,6 @@
 #include "phong/pipeline.h"
 
-#include "gpu.h"
+#include <core/rendering.h>
 #include <titus/sdk.h>
 
 SDL_GPUGraphicsPipeline* phong_create_pipeline(SDL_GPUDevice* device,
