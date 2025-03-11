@@ -45,10 +45,6 @@ set_target_properties(
     core_module PROPERTIES
     C_VISIBILITY_PRESET "hidden"
     VISIBILITY_INLINES_HIDDEN YES
-    VERSION "${PROJECT_VERSION}"
-    NO_SONAME 1
-    # SOVERSION "1"
-    # SOVERSION "${PROJECT_VERSION_MAJOR}"
     PREFIX ""
     EXPORT_NAME core
     OUTPUT_NAME core
