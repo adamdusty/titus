@@ -20,6 +20,12 @@ typedef struct TitusModuleManifest {
     sds binary; // Filename of binary without extension
 } TitusModuleManifest;
 
+typedef struct TitusModuleMetaData {
+    sds namespace;
+    sds name;
+    TitusModuleVersion version;
+} TitusModuleMetaData;
+
 typedef struct TitusModuleLoadInfo {
     TitusModuleManifest manifest;
     sds binary;    // Relative path to binary
