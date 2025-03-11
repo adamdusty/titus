@@ -6,7 +6,6 @@
 #include "titus/module/module.h"
 #include <SDL3/SDL.h>
 
-
 /// Using the module namespace and name, looks up the module's resource path and returns
 /// the path appended to the resource directory, if a file exists at that path.
 /// @param ecs The ecs world.
@@ -26,7 +25,8 @@ sds titus_get_asset_path(ecs_world_t* ecs, char* namespace, char* name, char* pa
         return NULL;
     }
 
-    module_kv* mod_map = *(module_kv**)ecs_get_mut_id(ecs, module_map_component, module_map_component);
+    TitusModuleHashmapKV* mod_map =
+        *(TitusModuleHashmapKV**)ecs_get_mut_id(ecs, module_map_component, module_map_component);
     if(NULL == mod_map) {
         titus_log_error("Failed to find module map entity");
         return NULL;
@@ -35,7 +35,7 @@ sds titus_get_asset_path(ecs_world_t* ecs, char* namespace, char* name, char* pa
     sds p = sdsempty();
     p     = sdscatfmt(p, "%s:%s", namespace, name);
 
-    module_kv* mod = shgetp(mod_map, p);
+    TitusModuleHashmapKV* mod = shgetp(mod_map, p);
     if(NULL == mod) {
         titus_log_error("Failed to get module. %s not in map.", p);
         sdsfree(p);

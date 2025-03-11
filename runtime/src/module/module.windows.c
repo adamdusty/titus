@@ -3,14 +3,13 @@
 #include <SDL3/SDL.h>
 #include <titus/assert/assert.h>
 
-
 // Define load library prototype so we don't have to include all of windows.h
 __declspec(dllimport) void* __stdcall LoadLibraryA(const char*);
 
-titus_module titus_load_module(titus_module_load_info* load_info) {
+TitusModule titus_load_module(TitusModuleLoadInfo* load_info) {
     TITUS_ASSERT(load_info != NULL); // precondition: NULL load_info
 
-    titus_module module   = {0};
+    TitusModule module    = {0};
     module.manifest       = load_info->manifest;
     module.directory_path = load_info->base;
     titus_log_info("module directory path: %s", module.directory_path);
@@ -36,7 +35,7 @@ titus_module titus_load_module(titus_module_load_info* load_info) {
         module.deinitialize = (titus_deinitialize_proc)SDL_LoadFunction(module.handle, TITUS_MODULE_DEINITIALIZE);
     }
 
-    load_info->manifest  = (titus_module_manifest){0};
+    load_info->manifest  = (TitusModuleManifest){0};
     load_info->binary    = NULL;
     load_info->resources = NULL;
 

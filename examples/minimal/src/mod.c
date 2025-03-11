@@ -9,7 +9,7 @@
 #define PLUGIN_EXPORT __attribute__((visibility("default")))
 #endif
 
-PLUGIN_EXPORT void titus_initialize(titus_application_context* ctx) {
+PLUGIN_EXPORT void titus_initialize(TitusApplicationContext* ctx) {
     printf("Hello from minimal plugin initialization\n");
     ecs_entity_t in = ecs_lookup(ctx->ecs, "core:input");
     if(in == 0) {

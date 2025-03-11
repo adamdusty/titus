@@ -11,7 +11,6 @@
 #include <titus/assert/assert.h>
 #include <yyjson.h>
 
-
 #ifdef __linux__
 #define SHARED_OBJECT_FILE_EXT "so"
 #elif defined(_WIN32)
@@ -20,7 +19,7 @@
 
 static const char* MANIFEST_FILE_NAME = "module.json";
 
-void titus_free_module(titus_module* mod) {
+void titus_free_module(TitusModule* mod) {
     sdsfree(mod->directory_path);
     sdsfree(mod->binary_path);
     sdsfree(mod->resource_path);
@@ -34,7 +33,7 @@ void titus_free_module(titus_module* mod) {
     mod->resource_path  = NULL;
 }
 
-sds titus_version_to_string(const titus_module_version* ver) {
+sds titus_version_to_string(const TitusModuleVersion* ver) {
     TITUS_ASSERT(ver != NULL); // precondition: Attempting to read from NULL
 
     sds str = sdsempty();
@@ -47,7 +46,7 @@ sds titus_version_to_string(const titus_module_version* ver) {
     return str;
 }
 
-sds titus_module_dir_from_manifest(const titus_module_manifest* man) {
+sds titus_module_dir_from_manifest(const TitusModuleManifest* man) {
     TITUS_ASSERT(NULL != man);            // precondition: Attempting to read from NULL
     TITUS_ASSERT(NULL != man->namespace); // precondition: Attempting to read from NULL
     TITUS_ASSERT(NULL != man->name);      // precondition: Attempting to read from NULL
@@ -72,12 +71,12 @@ SDL_EnumerationResult manifest_callback(void* ud, const char* d, const char* f) 
     sds path = sdsnew(d);
     path     = sdscat(path, f);
 
-    titus_module_manifest man = {0};
+    TitusModuleManifest man = {0};
     if(!titus_load_manifest_from_path(path, &man)) {
         titus_log_error("Found module.json (%s), but failed to load", path);
         return SDL_ENUM_CONTINUE;
     }
-    titus_module_load_info li = {.manifest = man, .binary = NULL, .resources = NULL, .base = sdsnew(d)};
+    TitusModuleLoadInfo li = {.manifest = man, .binary = NULL, .resources = NULL, .base = sdsnew(d)};
 
     if(li.manifest.binary) {
         li.binary = sdsnew(d);
@@ -95,7 +94,7 @@ SDL_EnumerationResult manifest_callback(void* ud, const char* d, const char* f) 
         sdsfree(res);
     }
 
-    titus_module_load_info** li_arr = ud;
+    TitusModuleLoadInfo** li_arr = ud;
     arrpush(*li_arr, li);
 
     titus_log_debug("Successfully gathered load info from %s", d);
@@ -137,7 +136,7 @@ sds* titus_get_manifest_paths_from_root(const char* root) {
     return paths;
 }
 
-bool titus_load_manifest_from_path(const char* path, titus_module_manifest* out) {
+bool titus_load_manifest_from_path(const char* path, TitusModuleManifest* out) {
     TITUS_ASSERT(path != NULL); // precondition: Attempting to load from empty path
     TITUS_ASSERT(out != NULL);  // precondition: Attempting to write to NULL
 
@@ -153,7 +152,7 @@ bool titus_load_manifest_from_path(const char* path, titus_module_manifest* out)
     return titus_parse_manifest(data, data_size, out);
 }
 
-bool titus_parse_manifest(char* data, size_t len, titus_module_manifest* out) {
+bool titus_parse_manifest(char* data, size_t len, TitusModuleManifest* out) {
     TITUS_ASSERT(out != NULL); // precondition: Attempting to write to NULL
 
     if(NULL == data || len == 0) {
@@ -221,7 +220,7 @@ bool titus_parse_manifest(char* data, size_t len, titus_module_manifest* out) {
     return true;
 }
 
-bool titus_validate_manifest(titus_module_manifest* man, char** msg) {
+bool titus_validate_manifest(TitusModuleManifest* man, char** msg) {
     TITUS_ASSERT(man != NULL); // precondition: Attempting to read from NULL
 
     if(man->namespace == NULL || sdslen(man->namespace) == 0) {
@@ -237,10 +236,10 @@ bool titus_validate_manifest(titus_module_manifest* man, char** msg) {
     return true;
 }
 
-titus_module_load_info* titus_get_module_load_info_from_dir(const char* root) {
+TitusModuleLoadInfo* titus_get_module_load_info_from_dir(const char* root) {
     TITUS_ASSERT(NULL != root); // precondition: Attempting to read from NULL
 
-    titus_module_load_info* loads = NULL;
+    TitusModuleLoadInfo* loads = NULL;
 
     bool result = SDL_EnumerateDirectory(root, modules_callback, &loads);
     if(!result) {
