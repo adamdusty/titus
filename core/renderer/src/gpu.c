@@ -11,7 +11,7 @@ SDL_FColor from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     return (SDL_FColor){.r = r / 255.0f, .g = g / 255.0f, .b = b / 255.0f, .a = a / 255.0f};
 }
 
-void upload_vertex_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const CoreMesh* mesh) {
+void upload_vertex_data(CoreRenderContext* ctx, SDL_GPUBuffer* buffer, const CoreMesh* mesh) {
     SDL_GPUTransferBuffer* transfer =
         SDL_CreateGPUTransferBuffer(ctx->device,
                                     &(SDL_GPUTransferBufferCreateInfo){
@@ -42,7 +42,7 @@ void upload_vertex_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const C
     SDL_ReleaseGPUTransferBuffer(ctx->device, transfer);
 }
 
-void upload_index_data(core_render_context* ctx, SDL_GPUBuffer* buffer, const CoreMesh* mesh) {
+void upload_index_data(CoreRenderContext* ctx, SDL_GPUBuffer* buffer, const CoreMesh* mesh) {
     SDL_GPUTransferBuffer* transfer =
         SDL_CreateGPUTransferBuffer(ctx->device,
                                     &(SDL_GPUTransferBufferCreateInfo){

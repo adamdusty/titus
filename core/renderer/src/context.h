@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL.h>
 
-typedef struct core_render_context {
+typedef struct CoreRenderContext {
     SDL_Window* window;
     SDL_GPUDevice* device;
-} core_render_context;
+} CoreRenderContext;

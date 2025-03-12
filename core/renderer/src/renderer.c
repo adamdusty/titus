@@ -18,10 +18,10 @@ static SDL_GPUTexture* depth_texture             = NULL;
 static ecs_query_t* camera_query                 = NULL;
 static ecs_query_t* mesh_query                   = NULL;
 
-core_render_context* create_render_context(SDL_Window* window, ecs_world_t* ecs);
+CoreRenderContext* create_render_context(SDL_Window* window, ecs_world_t* ecs);
 void render_frame(ecs_iter_t* it);
 
-ECS_COMPONENT_DECLARE(core_render_context);
+ECS_COMPONENT_DECLARE(CoreRenderContext);
 ECS_COMPONENT_DECLARE(CoreMeshRenderInfo);
 ECS_SYSTEM_DECLARE(render_frame);
 
@@ -29,105 +29,130 @@ void rendererImport(ecs_world_t* ecs) {
 
     ECS_MODULE(ecs, CoreRenderer);
 
-    ECS_COMPONENT_DEFINE(ecs, core_render_context);
+    ECS_COMPONENT_DEFINE(ecs, CoreRenderContext);
     ECS_COMPONENT_DEFINE(ecs, CoreMeshRenderInfo);
 
-    ECS_SYSTEM_DEFINE(ecs, render_frame, EcsPostUpdate, core.renderer.core_render_context($));
+    ECS_SYSTEM_DEFINE(ecs, render_frame, EcsPostUpdate, core.renderer.CoreRenderContext($));
 }
 
 CORE_RENDERER_EXPORT void titus_initialize(const TitusApplicationContext* ctx) {
     titus_log_info(logmsg("initializing"));
+
+    ecs_entity_t mod = ecs_import(ctx->ecs, rendererImport, "core.renderer");
+    if(mod == 0) {
+        titus_log_error(logmsg("Failed to import render module"));
+        return;
+    }
+
+    if(NULL == ctx->window) {
+        titus_log_error(logmsg("Application context has no window. Module uninitialized."));
+        return;
+    }
+
+    CoreRenderContext* render_context = ecs_singleton_ensure(ctx->ecs, CoreRenderContext);
+    render_context->window            = ctx->window;
+    render_context->device            = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, "vulkan");
+
+    if(NULL == render_context->device) {
+        titus_log_error(logmsg("Failed to create GPU device: %s"), SDL_GetError());
+        return;
+    }
 }
 
-CORE_RENDERER_EXPORT void titus_deinitialize(TitusApplicationContext* ctx) {}
+CORE_RENDERER_EXPORT void titus_deinitialize(TitusApplicationContext* ctx) {
+    CoreRenderContext* render_context = ecs_get_mut(ctx->ecs, ecs_id(CoreRenderContext), CoreRenderContext);
+
+    SDL_DestroyGPUDevice(render_context->device);
+}
 
 void render_frame(ecs_iter_t* it) {
-    core_render_context* ctx = ecs_field(it, core_render_context, 0);
+    // CoreRenderContext* ctx = ecs_field(it, CoreRenderContext, 0);
 
-    ecs_iter_t camera_it = ecs_query_iter(it->world, camera_query);
-    ecs_iter_t mesh_it   = ecs_query_iter(it->world, mesh_query);
+    // ecs_iter_t camera_it = ecs_query_iter(it->world, camera_query);
+    // ecs_iter_t mesh_it   = ecs_query_iter(it->world, mesh_query);
 
-    SDL_Window* win    = ctx->window;
-    SDL_GPUDevice* dev = ctx->device;
+    // SDL_Window* win    = ctx->window;
+    // SDL_GPUDevice* dev = ctx->device;
 
-    SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(dev);
-    if(cmdbuf == NULL) {
-        titus_log_error("AcquireGPUCommandBuffer failed: %s", SDL_GetError());
-        return;
-    }
-    SDL_GPUTexture* swapchainTexture;
-    if(!SDL_WaitAndAcquireGPUSwapchainTexture(cmdbuf, win, &swapchainTexture, NULL, NULL)) {
-        titus_log_error("WaitAndAcquireGPUSwapchainTexture failed: %s", SDL_GetError());
-        return;
-    }
+    // SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(dev);
+    // if(cmdbuf == NULL) {
+    //     titus_log_error("AcquireGPUCommandBuffer failed: %s", SDL_GetError());
+    //     return;
+    // }
+    // SDL_GPUTexture* swapchainTexture;
+    // if(!SDL_WaitAndAcquireGPUSwapchainTexture(cmdbuf, win, &swapchainTexture, NULL, NULL)) {
+    //     titus_log_error("WaitAndAcquireGPUSwapchainTexture failed: %s", SDL_GetError());
+    //     return;
+    // }
 
-    if(swapchainTexture == NULL) {
-        titus_log_info("Swapchain texture is NULL");
-        return;
-    }
+    // if(swapchainTexture == NULL) {
+    //     titus_log_info("Swapchain texture is NULL");
+    //     return;
+    // }
 
-    SDL_GPUColorTargetInfo colorTargetInfo = {0};
-    colorTargetInfo.texture                = swapchainTexture;
-    colorTargetInfo.clear_color            = from_rgba(100, 149, 237, 255); // cornflower blue
-    colorTargetInfo.load_op                = SDL_GPU_LOADOP_CLEAR;
-    colorTargetInfo.store_op               = SDL_GPU_STOREOP_DONT_CARE;
+    // SDL_GPUColorTargetInfo colorTargetInfo = {0};
+    // colorTargetInfo.texture                = swapchainTexture;
+    // colorTargetInfo.clear_color            = from_rgba(100, 149, 237, 255); // cornflower blue
+    // colorTargetInfo.load_op                = SDL_GPU_LOADOP_CLEAR;
+    // colorTargetInfo.store_op               = SDL_GPU_STOREOP_DONT_CARE;
 
-    SDL_GPUDepthStencilTargetInfo depth_target_info = {0};
-    depth_target_info.texture                       = depth_texture;
-    depth_target_info.cycle                         = true;
-    depth_target_info.clear_depth                   = 1.0f;
-    depth_target_info.clear_stencil                 = 0;
-    depth_target_info.load_op                       = SDL_GPU_LOADOP_CLEAR;
-    depth_target_info.store_op                      = SDL_GPU_STOREOP_STORE;
-    depth_target_info.stencil_load_op               = SDL_GPU_LOADOP_CLEAR;
-    depth_target_info.stencil_store_op              = SDL_GPU_STOREOP_STORE;
+    // SDL_GPUDepthStencilTargetInfo depth_target_info = {0};
+    // depth_target_info.texture                       = depth_texture;
+    // depth_target_info.cycle                         = true;
+    // depth_target_info.clear_depth                   = 1.0f;
+    // depth_target_info.clear_stencil                 = 0;
+    // depth_target_info.load_op                       = SDL_GPU_LOADOP_CLEAR;
+    // depth_target_info.store_op                      = SDL_GPU_STOREOP_STORE;
+    // depth_target_info.stencil_load_op               = SDL_GPU_LOADOP_CLEAR;
+    // depth_target_info.stencil_store_op              = SDL_GPU_STOREOP_STORE;
 
-    // Render scene from every camera view
-    while(ecs_query_next(&camera_it)) {
-        CoreCamera* camera            = ecs_field(&camera_it, CoreCamera, 0);
-        CorePosition* camera_position = ecs_field(&camera_it, CorePosition, 1);
+    // // Render scene from every camera view
+    // while(ecs_query_next(&camera_it)) {
+    //     CoreCamera* camera            = ecs_field(&camera_it, CoreCamera, 0);
+    //     CorePosition* camera_position = ecs_field(&camera_it, CorePosition, 1);
 
-        mat4 cam[2] = {0};
+    //     mat4 cam[2] = {0};
 
-        glm_perspective(45.0f, 1280.0f / 720.0f, 0.01f, 1000.0f, cam[0]);
-        glm_lookat_rh_zo(*camera_position, (float[]){0.0f, 0.0f, 0.0f}, camera->up, cam[1]);
-        SDL_PushGPUVertexUniformData(cmdbuf, 0, &cam, sizeof(mat4) * 2);
+    //     glm_perspective(45.0f, 1280.0f / 720.0f, 0.01f, 1000.0f, cam[0]);
+    //     glm_lookat_rh_zo(*camera_position, (float[]){0.0f, 0.0f, 0.0f}, camera->up, cam[1]);
+    //     SDL_PushGPUVertexUniformData(cmdbuf, 0, &cam, sizeof(mat4) * 2);
 
-        SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depth_target_info);
-        if(NULL == render_pass) {
-            titus_log_error("Failed to begin render pass: %s", SDL_GetError());
-            return;
-        }
+    //     SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depth_target_info);
+    //     if(NULL == render_pass) {
+    //         titus_log_error("Failed to begin render pass: %s", SDL_GetError());
+    //         return;
+    //     }
 
-        for(int i = 0; i < camera_it.count; i++) {
-            // Render every mesh
-            while(ecs_query_next(&mesh_it)) {
-                CoreMesh* mesh                  = ecs_field(&mesh_it, CoreMesh, 0);
-                CoreMeshRenderInfo* render_info = ecs_field(&mesh_it, CoreMeshRenderInfo, 1);
+    //     for(int i = 0; i < camera_it.count; i++) {
+    //         // Render every mesh
+    //         while(ecs_query_next(&mesh_it)) {
+    //             CoreMesh* mesh                  = ecs_field(&mesh_it, CoreMesh, 0);
+    //             CoreMeshRenderInfo* render_info = ecs_field(&mesh_it, CoreMeshRenderInfo, 1);
 
-                for(int j = 0; j < mesh_it.count; j++) {
-                    upload_vertex_data(ctx, render_info->vertex_buffer, &mesh[j]);
-                    upload_index_data(ctx, render_info->index_buffer, &mesh[j]);
+    //             for(int j = 0; j < mesh_it.count; j++) {
+    //                 upload_vertex_data(ctx, render_info->vertex_buffer, &mesh[j]);
+    //                 upload_index_data(ctx, render_info->index_buffer, &mesh[j]);
 
-                    SDL_BindGPUGraphicsPipeline(render_pass, default_pipeline);
-                    SDL_BindGPUVertexBuffers(
-                        render_pass, 0, &(SDL_GPUBufferBinding){.buffer = render_info->vertex_buffer, .offset = 0}, 1);
-                    SDL_BindGPUIndexBuffer(
-                        render_pass, &(SDL_GPUBufferBinding){.buffer = render_info->index_buffer, .offset = 0}, 1);
-                    SDL_DrawGPUIndexedPrimitives(render_pass, mesh[j].index_count, 1, 0, 0, 0);
-                }
-            }
-        }
+    //                 SDL_BindGPUGraphicsPipeline(render_pass, default_pipeline);
+    //                 SDL_BindGPUVertexBuffers(
+    //                     render_pass, 0, &(SDL_GPUBufferBinding){.buffer = render_info->vertex_buffer, .offset = 0},
+    //                     1);
+    //                 SDL_BindGPUIndexBuffer(
+    //                     render_pass, &(SDL_GPUBufferBinding){.buffer = render_info->index_buffer, .offset = 0}, 1);
+    //                 SDL_DrawGPUIndexedPrimitives(render_pass, mesh[j].index_count, 1, 0, 0, 0);
+    //             }
+    //         }
+    //     }
 
-        SDL_EndGPURenderPass(render_pass);
-        SDL_SubmitGPUCommandBuffer(cmdbuf);
-    }
+    //     SDL_EndGPURenderPass(render_pass);
+    //     SDL_SubmitGPUCommandBuffer(cmdbuf);
+    // }
 
-    return;
+    // return;
 }
 
-core_render_context* create_render_context(SDL_Window* window, ecs_world_t* ecs) {
-    core_render_context* render_context = ecs_singleton_ensure(ecs, core_render_context);
+CoreRenderContext* create_render_context(SDL_Window* window, ecs_world_t* ecs) {
+    CoreRenderContext* render_context = ecs_singleton_ensure(ecs, CoreRenderContext);
 
     SDL_GPUDevice* gpu_device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, "vulkan");
     if(NULL == gpu_device) {

@@ -52,9 +52,9 @@ set_target_properties(
     OUTPUT_NAME renderer
 )
 
-add_custom_target(resources ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/resources ${CMAKE_CURRENT_BINARY_DIR}/resources
-)
+# add_custom_target(resources ALL
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/resources ${CMAKE_CURRENT_BINARY_DIR}/resources
+# )
 
 # LLM GENERATED 
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders")
