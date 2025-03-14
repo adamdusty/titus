@@ -9,23 +9,43 @@
 #define TITUS_MODULE_INITIALIZE "titus_initialize"
 #define TITUS_MODULE_DEINITIALIZE "titus_deinitialize"
 
-/*
-    Checks each directory inside `root` for a module.json file.
-    If present, parses the manifest to get paths for a binary.
-    Checks for a subdirectory named `resources` to add to resources.
-*/
-TitusModuleLoadInfo* titus_get_module_load_info_from_dir(const char* root);
+extern ECS_COMPONENT_DECLARE(TitusModulePathInfo);
+extern ECS_COMPONENT_DECLARE(TitusModuleMetaData);
+extern ECS_COMPONENT_DECLARE(TitusModule);
 
-/*
-    If `binary` is not NULL, and a file exists at the path, attempts to load a handle to a shared library at that
-   location.
-   If `resources` is not NULL, and a directory exists at the path, adds the directory to the resource registry.
-   Everything from `load_info` is moved into the returned TitusModule. Fields are zeroed on return.
-*/
-TitusModule titus_load_module(TitusModuleLoadInfo* load_info);
+typedef void (*titus_initialize_proc)(const TitusApplicationContext*);
+typedef void (*titus_deinitialize_proc)(const TitusApplicationContext*);
 
-void titus_free_module(TitusModule* mod);
+typedef struct TitusModulePathInfo {
+    sds root_directory;
+    sds resource_directory;
+    sds binary_path;
+    TitusVersion version;
+} TitusModulePathInfo;
 
-bool titus_load_manifest_from_path(const char* path, TitusModuleManifest* out);
-bool titus_parse_manifest(char* data, size_t len, TitusModuleManifest* out);
-bool titus_validate_manifest(TitusModuleManifest* man, char** msg);
+typedef struct TitusModuleMetaData {
+    sds namespace;
+    sds name;
+    sds binary_file_name;
+    TitusVersion version;
+} TitusModuleMetaData;
+
+typedef struct TitusModule {
+    TitusModuleMetaData metadata;
+    SDL_SharedObject* binary;
+
+    titus_initialize_proc initialize;
+    titus_initialize_proc deinitialize;
+} TitusModule;
+
+// Get available modules and return a stb dynamic array
+void titus_get_available_modules(ecs_world_t* ecs, const char* root);
+
+// Load modules from a stb dynamic array of module metadata
+void titus_load_modules(ecs_world_t* ecs, TitusModuleMetaData* module_metadatas);
+
+// Unloads module and frees metadata
+void titus_free_module(TitusModule* module);
+
+// Deserialize a module manifest file to get it's metadata
+bool titus_deserialize_manifest(sds path, TitusModuleMetaData* out);

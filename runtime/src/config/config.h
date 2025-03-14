@@ -2,7 +2,8 @@
 
 typedef struct TitusConfig {
     const char* log_level;
-    const char* module_root_directory;
+    const char* module_directory;
+    const char* pack_directory;
 } TitusConfig;
 
 TitusConfig titus_load_config(const char* path);

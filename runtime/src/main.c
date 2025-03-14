@@ -4,6 +4,7 @@
 
 #include "config/config.h"
 #include "module/module.h"
+#include "module/pack.h"
 #include <SDL3/SDL.h>
 #include <flecs.h>
 #include <stddef.h>
@@ -12,10 +13,17 @@
 
 typedef int quit_t;
 
+ECS_COMPONENT_DECLARE(TitusModulePathInfo);
+ECS_COMPONENT_DECLARE(TitusModuleMetaData);
+ECS_COMPONENT_DECLARE(TitusModule);
+
 void initialize_logging(const TitusConfig* config);
 void initialize_application_context(TitusApplicationContext* ctx);
 void deinitialize_application_context(TitusApplicationContext* ctx);
-struct TitusModuleHashmapKV* load_modules(const TitusConfig* config, sds executable_direcory);
+void define_components(ecs_world_t* ecs);
+void create_queries(ecs_world_t* ecs);
+
+static ecs_query_t* module_load_info = NULL;
 
 int main(int, char*[]) {
     SDL_SetAppMetadata("Titus", "0.1.0-alpha", "com.github.titus");
@@ -30,6 +38,8 @@ int main(int, char*[]) {
         exit(EXIT_FAILURE);
     }
     sds executable_directory_path = sdsnew(SDL_GetBasePath());
+    sds module_directory          = sdsdup(executable_directory_path);
+    sds pack_directory            = sdsdup(executable_directory_path);
 
     TitusConfig app_config = titus_default_config();
     initialize_logging(&app_config);
@@ -37,6 +47,8 @@ int main(int, char*[]) {
 
     TitusApplicationContext context = {0};
     initialize_application_context(&context);
+    define_components(context.ecs);
+    create_queries(context.ecs);
 
     /* Set up the explorer */
     ECS_IMPORT(context.ecs, FlecsStats);
@@ -45,13 +57,49 @@ int main(int, char*[]) {
 
     ECS_COMPONENT(context.ecs, quit_t);
 
-    TitusModuleHashmapKV* modules = load_modules(&app_config, executable_directory_path);
-    ecs_entity_t mm               = ecs_lookup(context.ecs, "runtime:module_map");
-    ecs_set_id(context.ecs, mm, mm, sizeof(TitusModuleHashmapKV*), &modules);
+    // Find all available modules
+    module_directory = sdscatfmt(module_directory, "/%s", app_config.module_directory);
+    titus_get_available_modules(context.ecs, module_directory);
 
-    for(int i = 0; i < shlen(modules); i++) {
-        if(NULL != modules[i].value.initialize)
-            modules[i].value.initialize(&context);
+    titus_log_debug("Found available modules");
+
+    ecs_iter_t module_load = ecs_query_iter(context.ecs, module_load_info);
+    while(ecs_query_next(&module_load)) {
+        const TitusModuleMetaData* meta = ecs_field(&module_load, TitusModuleMetaData, 0);
+        const TitusModulePathInfo* path = ecs_field(&module_load, TitusModulePathInfo, 1);
+
+        titus_log_debug("Iterating found modules");
+        titus_log_debug("path: %s", path == NULL ? "null" : "not null");
+        titus_log_debug("meta: %s", meta == NULL ? "null" : "not null");
+        titus_log_debug("count: %d", module_load.count);
+
+        for(int i = 0; i < module_load.count; i++) {
+            titus_log_info("Entity: %s", ecs_get_name(module_load.world, module_load.entities[i]));
+            titus_log_info("Module namespace: %s", meta[i].namespace);
+            // titus_log_info("Module name: %s", meta[i].name);
+            // titus_log_info("Module binary: %s", meta[i].binary_file_name);
+            titus_log_info("Root directory: %s", path[i].root_directory);
+            titus_log_info("Binary path: %s", path[i].binary_path);
+        }
+    }
+    return 0;
+
+    // Find all pack files
+    pack_directory         = sdscatfmt(pack_directory, "/%s", app_config.pack_directory);
+    TitusModulePack* packs = titus_get_module_packs(pack_directory);
+
+    // TODO: Allow user to choose pack or set default pack(?)
+    // TODO: Verify that all modules in pack are available
+    TitusModulePack pack = {0}; // packs[0];
+
+    // Load modules for pack
+    TitusModule* modules = NULL;
+    titus_load_modules(context.ecs, pack.required_modules);
+
+    // Initialize modules and start applciation
+    for(int i = 0; i < arrlen(modules); i++) {
+        if(NULL != modules[i].initialize)
+            modules[i].initialize(&context);
     }
 
     // titus_timer t = {0};
@@ -60,16 +108,16 @@ int main(int, char*[]) {
         ecs_progress(context.ecs, 0);
     }
 
-    for(int i = 0; i < shlen(modules); i++) {
-        if(NULL != modules[i].value.deinitialize)
-            modules[i].value.deinitialize(&context);
+    for(int i = 0; i < arrlen(modules); i++) {
+        if(NULL != modules[i].deinitialize)
+            modules[i].deinitialize(&context);
     }
 
     /* Clean up */
     // Deinit modules in reverse order
     for(ptrdiff_t i = shlen(modules) - 1; i >= 0; i--) {
-        titus_log_info("Freeing module: %s", modules[i].key);
-        titus_free_module(&modules[i].value);
+        titus_log_info("Freeing module: %s", modules[i]);
+        titus_free_module(&modules[i]);
     }
     shfree(modules);
 
@@ -111,13 +159,6 @@ void initialize_application_context(TitusApplicationContext* ctx) {
     ctx->window = SDL_CreateWindow("Titus", 1280, 720, SDL_WINDOW_RESIZABLE);
     ctx->ecs    = ecs_init();
 
-    ecs_component(ctx->ecs,
-                  {
-                      .type.alignment = alignof(TitusModuleHashmapKV*),
-                      .type.size      = sizeof(TitusModuleHashmapKV*),
-                      .entity         = ecs_entity(ctx->ecs, {.name = "runtime:module_map"}),
-                  });
-
     ecs_entity_t window = ecs_component(ctx->ecs,
                                         {
                                             .type.alignment = alignof(SDL_Window*),
@@ -133,38 +174,15 @@ void deinitialize_application_context(TitusApplicationContext* ctx) {
     SDL_DestroyWindow(ctx->window);
 }
 
-TitusModuleHashmapKV* load_modules(const TitusConfig* config, sds executable_directory) {
-    TITUS_ASSERT(config != NULL);
-    TITUS_ASSERT(config->module_root_directory != NULL);
+void define_components(ecs_world_t* ecs) {
+    ECS_COMPONENT_DEFINE(ecs, TitusModuleMetaData);
+    ECS_COMPONENT_DEFINE(ecs, TitusModulePathInfo);
+    ECS_COMPONENT_DEFINE(ecs, TitusModule);
 
-    sds module_path = sdsempty();
-    module_path     = sdscatsds(module_path, executable_directory);
-    module_path     = sdscat(module_path, config->module_root_directory);
+    titus_log_info("metadata: %d", ecs_id(TitusModuleMetaData));
+    titus_log_info("metadata: %d", ecs_id(TitusModulePathInfo));
+}
 
-    TitusModuleLoadInfo* module_load_infos = titus_get_module_load_info_from_dir(module_path);
-    sdsfree(module_path);
-
-    if(NULL == module_load_infos) {
-        titus_log_error("No module loading information found");
-        titus_log_error("Runtime requires some core modules to function");
-        exit(EXIT_FAILURE);
-    }
-
-    TitusModuleHashmapKV* module_map = NULL;
-    for(int i = 0; i < arrlen(module_load_infos); i++) {
-        TitusModule mod = titus_load_module(&module_load_infos[i]); // module_load_info gets moved into module here
-        sds key         = sdsdup(mod.manifest.namespace);
-        key             = sdscat(key, ":");
-        key             = sdscatsds(key, mod.manifest.name);
-        shput(module_map, key, mod);
-    }
-
-    if(NULL == module_map) {
-        titus_log_error("No modules loaded");
-        titus_log_error("Runtime has no functionality without modules");
-        exit(EXIT_FAILURE);
-    }
-
-    return module_map;
-    // return modules;
+void create_queries(ecs_world_t* ecs) {
+    module_load_info = ecs_query(ecs, {.expr = "[in] TitusModuleMetaData, [in] TitusModulePathInfo"});
 }

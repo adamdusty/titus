@@ -9,6 +9,11 @@
 #include <SDL3/SDL.h>
 #include <flecs.h>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846f
-#endif
+typedef struct TitusVersion {
+    uint64_t major;
+    uint64_t minor;
+    uint64_t patch;
+    sds annotation;
+} TitusVersion;
+
+TITUS_EXPORT sds titus_version_to_string(const TitusVersion* ver);

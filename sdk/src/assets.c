@@ -19,38 +19,38 @@ sds titus_get_asset_path(ecs_world_t* ecs, char* namespace, char* name, char* pa
     TITUS_ASSERT(ecs != NULL);                                       // precondition: Attempting to read from NULL
     TITUS_ASSERT(namespace != NULL && name != NULL && path != NULL); // precondition
 
-    ecs_entity_t module_map_component = ecs_lookup(ecs, "runtime:module_map");
-    if(module_map_component == 0) {
-        titus_log_error("Failed to find module map component id.");
-        return NULL;
-    }
+    // ecs_entity_t module_map_component = ecs_lookup(ecs, "runtime:module_map");
+    // if(module_map_component == 0) {
+    //     titus_log_error("Failed to find module map component id.");
+    //     return NULL;
+    // }
 
-    TitusModuleHashmapKV* mod_map =
-        *(TitusModuleHashmapKV**)ecs_get_mut_id(ecs, module_map_component, module_map_component);
-    if(NULL == mod_map) {
-        titus_log_error("Failed to find module map entity");
-        return NULL;
-    }
+    // TitusModuleHashmapKV* mod_map =
+    //     *(TitusModuleHashmapKV**)ecs_get_mut_id(ecs, module_map_component, module_map_component);
+    // if(NULL == mod_map) {
+    //     titus_log_error("Failed to find module map entity");
+    //     return NULL;
+    // }
 
-    sds p = sdsempty();
-    p     = sdscatfmt(p, "%s:%s", namespace, name);
+    // sds p = sdsempty();
+    // p     = sdscatfmt(p, "%s:%s", namespace, name);
 
-    TitusModuleHashmapKV* mod = shgetp(mod_map, p);
-    if(NULL == mod) {
-        titus_log_error("Failed to get module. %s not in map.", p);
-        sdsfree(p);
-        return NULL;
-    }
-    sdsfree(p);
+    // TitusModuleHashmapKV* mod = shgetp(mod_map, p);
+    // if(NULL == mod) {
+    //     titus_log_error("Failed to get module. %s not in map.", p);
+    //     sdsfree(p);
+    //     return NULL;
+    // }
+    // sdsfree(p);
 
-    p = sdsempty();
-    p = sdscatfmt(p, "%S%s", mod->value.resource_path, path);
+    // p = sdsempty();
+    // p = sdscatfmt(p, "%S%s", mod->value.resource_path, path);
 
-    if(!SDL_GetPathInfo(p, NULL)) {
-        titus_log_error("No resource found at path: %s", p);
-        sdsfree(p);
-        return NULL;
-    }
+    // if(!SDL_GetPathInfo(p, NULL)) {
+    //     titus_log_error("No resource found at path: %s", p);
+    //     sdsfree(p);
+    //     return NULL;
+    // }
 
-    return p;
+    return NULL;
 }

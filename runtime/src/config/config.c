@@ -4,8 +4,9 @@
 
 TitusConfig titus_default_config() {
     return (TitusConfig){
-        .log_level             = "warn",
-        .module_root_directory = "modules",
+        .log_level        = "warn",
+        .module_directory = "modules",
+        .pack_directory   = "packs",
     };
 }
 
