@@ -6,7 +6,8 @@
 typedef struct TitusModulePack {
     sds name;
     size_t module_count;
-    TitusModuleMetaData* required_modules;
+    TitusModuleMetaData* modules;
 } TitusModulePack;
 
-TitusModulePack* titus_get_module_packs(const char* root);
+// Get all available packs from `root`
+TitusModulePack* titus_get_module_packs(sds root);

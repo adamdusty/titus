@@ -16,36 +16,36 @@ extern ECS_COMPONENT_DECLARE(TitusModule);
 typedef void (*titus_initialize_proc)(const TitusApplicationContext*);
 typedef void (*titus_deinitialize_proc)(const TitusApplicationContext*);
 
-typedef struct TitusModulePathInfo {
-    sds root_directory;
-    sds resource_directory;
-    sds binary_path;
-    TitusVersion version;
-} TitusModulePathInfo;
-
 typedef struct TitusModuleMetaData {
     sds namespace;
     sds name;
-    sds binary_file_name;
     TitusVersion version;
 } TitusModuleMetaData;
 
 typedef struct TitusModule {
-    TitusModuleMetaData metadata;
+    sds root_directory;
+    TitusModuleMetaData* metadata;
     SDL_SharedObject* binary;
 
     titus_initialize_proc initialize;
     titus_initialize_proc deinitialize;
 } TitusModule;
 
-// Get available modules and return a stb dynamic array
-void titus_get_available_modules(ecs_world_t* ecs, const char* root);
+// Get all the modules available to be loaded. This just means they are in a subdirectory of `root` and have a
+// module.json manifest file describing the module. Returns an stb dynamic array of load info.
+TitusModule* titus_get_available_modules(sds root);
 
-// Load modules from a stb dynamic array of module metadata
-void titus_load_modules(ecs_world_t* ecs, TitusModuleMetaData* module_metadatas);
+// Load a single module from path, which should point to a `module.json` file
+bool titus_load_module_binary(TitusModule* li);
 
-// Unloads module and frees metadata
+TitusModule* titus_load_pack_modules(TitusModuleMetaData* required,
+                                     size_t required_count,
+                                     TitusModule* available,
+                                     size_t available_count);
+
 void titus_free_module(TitusModule* module);
 
 // Deserialize a module manifest file to get it's metadata
 bool titus_deserialize_manifest(sds path, TitusModuleMetaData* out);
+
+bool titus_meta_data_equal(const TitusModuleMetaData* lhs, const TitusModuleMetaData* rhs);
