@@ -26,6 +26,12 @@ typedef struct TitusModule {
     titus_deinitialize_proc deinitialize;
 } TitusModule;
 
+// Empty constructor for TitusModuleMetaData
+TitusModuleMetaData* titus_metadata_new_empty();
+
+// Returns `NULL` if all required fields are present, otherwise an sds of the first missing field.
+sds titus_validate_metadata(const TitusModuleMetaData* meta);
+
 // Get all the modules available to be loaded. This just means they are in a subdirectory of `root` and have a
 // module.json manifest file describing the module. Returns an stb dynamic array of load info.
 TitusModule* titus_get_available_modules(sds root);

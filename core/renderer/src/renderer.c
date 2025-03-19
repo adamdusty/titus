@@ -57,7 +57,8 @@ CORE_RENDERER_EXPORT void titus_initialize(const TitusApplicationContext* ctx, s
         render_context->device, render_context->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_VSYNC);
 
     // size_t capsule_size = 0;
-    CoreMesh capsule = create_cube_mesh(); // core_create_capsule_mesh(1.0f, 2.0f, 10, 10);
+    // CoreMesh capsule = create_cube_mesh(); // core_create_capsule_mesh(1.0f, 2.0f, 10, 10);
+    CoreMesh capsule = core_create_capsule_mesh(1.0f, 2.0f, 10, 10);
 
     ecs_entity_t test_e = ecs_entity(ctx->ecs, {.name = "test_mesh"});
     ecs_set(ctx->ecs,

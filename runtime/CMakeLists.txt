@@ -7,8 +7,6 @@ target_sources(titus_lib
         src/config/config.c
         src/module/module.c
         src/module/pack.c
-        $<$<PLATFORM_ID:Linux>:src/module/module.linux.c>
-        $<$<PLATFORM_ID:Windows>:src/module/module.windows.c>
 )
 
 

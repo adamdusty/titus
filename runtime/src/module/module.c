@@ -21,6 +21,16 @@ static const char* MANIFEST_FILE_NAME = "module.json";
 
 bool titus_parse_manifest(char* data, size_t len, TitusModuleMetaData* out);
 
+/**
+ * @brief Callback determines if the current entry is a module.json file. If so, attempts to deserialize it and add it
+ * to the module metadata array passed as `user_data`. If the path is a directory, iterate enumerate the subdirectory.
+ * Other continue enumerating.
+ *
+ * @param user_data Pointer to an std dynamic array of TitusModuleMetaData.
+ * @param dir Current directory.
+ * @param file Current file.
+ * @return SDL_EnumerationResult
+ */
 SDL_EnumerationResult manifest_cb(void* user_data, const char* dir, const char* file) {
     sds path = sdsnew(dir);
     path     = sdscat(path, file);
@@ -31,7 +41,7 @@ SDL_EnumerationResult manifest_cb(void* user_data, const char* dir, const char* 
     if(SDL_PATHTYPE_FILE == info.type && SDL_strcmp(MANIFEST_FILE_NAME, file) == 0) {
         TitusModule** modules = user_data;
 
-        TitusModuleMetaData* meta = malloc(sizeof(TitusModuleMetaData));
+        TitusModuleMetaData* meta = titus_metadata_new_empty();
         if(!titus_deserialize_manifest(path, meta)) {
             titus_log_error("Failed to deserialize manifest at path: %s", path);
 
@@ -39,6 +49,7 @@ SDL_EnumerationResult manifest_cb(void* user_data, const char* dir, const char* 
             return SDL_ENUM_CONTINUE;
         }
 
+        // Unitialized fields are zero initialized here.
         TitusModule mod = {.root_directory = sdsnew(dir), .metadata = meta};
         arrpush(*modules, mod);
 
@@ -53,7 +64,13 @@ SDL_EnumerationResult manifest_cb(void* user_data, const char* dir, const char* 
     return SDL_ENUM_CONTINUE;
 }
 
-// TODO: document
+/**
+ * @brief Enumerate through the `root` directory in search of module manifest files. Recursively searches
+ * subdirectories.
+ *
+ * @param root Directory to search for modules.
+ * @return TitusModule* An stb dynamic array of TitusModule, with unloaded binary data.
+ */
 TitusModule* titus_get_available_modules(sds root) {
     TitusModule* modules = NULL;
 
@@ -65,7 +82,16 @@ TitusModule* titus_get_available_modules(sds root) {
     return modules;
 }
 
+/**
+ * @brief Attempt to load the binary data of a module. Returns false on failure.
+ *
+ * @param mod Pointer to the module to load.
+ * @return true
+ * @return false
+ */
 bool titus_load_module_binary(TitusModule* mod) {
+    TITUS_ASSERT(mod->root_directory != NULL); // precondition: The module root directory cannot be null
+
     sds bin_path = sdsdup(mod->root_directory);
     bin_path     = sdscatfmt(bin_path, "%S.%s", mod->metadata->name, SHARED_OBJECT_FILE_EXT);
 
@@ -82,6 +108,15 @@ bool titus_load_module_binary(TitusModule* mod) {
     return true;
 }
 
+/**
+ * @brief Compare to metadata objects. Objects are equal if both are `NULL` or the binary data of the namespaces and
+ * names much AND the version numbers match. The version annotation is not considered in the comparison.
+ *
+ * @param lhs
+ * @param rhs
+ * @return true
+ * @return false
+ */
 bool titus_meta_data_equal(const TitusModuleMetaData* lhs, const TitusModuleMetaData* rhs) {
     if(lhs == NULL && rhs == NULL) {
         return true;
@@ -96,6 +131,16 @@ bool titus_meta_data_equal(const TitusModuleMetaData* lhs, const TitusModuleMeta
            titus_version_compare(&lhs->version, &rhs->version) == 0;
 }
 
+/**
+ * @brief Searches through available modules for the required modules and loads it. Returns a pointer to a dynamic array
+ * of loaded modules.
+ *
+ * @param required Pointer to an array of metadata for required modules.
+ * @param required_count Number of metadata objects in `required`.
+ * @param available Pointer to array of available modules.
+ * @param available_count Number of module objects in `available`.
+ * @return TitusModule*
+ */
 TitusModule* titus_load_pack_modules(TitusModuleMetaData* required,
                                      size_t required_count,
                                      TitusModule* available,
@@ -140,6 +185,14 @@ void titus_free_module(TitusModule* mod) {
     mod->deinitialize = NULL;
 }
 
+/**
+ * @brief Deserialize a module manifest.
+ *
+ * @param path Path to manifest file.
+ * @param out Metadata object to load data into.
+ * @return true On success.
+ * @return false On failure to load file or failure to parse manifest.
+ */
 bool titus_deserialize_manifest(sds path, TitusModuleMetaData* out) {
     TITUS_ASSERT(path != NULL) // precondition: Attempting to dereference NULL
     TITUS_ASSERT(out != NULL)  // precondition: Attempting to assign to NULL
@@ -158,49 +211,27 @@ bool titus_deserialize_manifest(sds path, TitusModuleMetaData* out) {
 
     if(!titus_parse_manifest(bytes, num_bytes, out)) {
         titus_log_error("Failed to parse manifest at: %s", path);
+        SDL_free(bytes);
+        return false;
     }
 
     SDL_free(bytes);
     return true;
 }
 
-// sds* titus_get_manifest_paths_from_root(const char* root) {
-//     TITUS_ASSERT(NULL != root); // precondition: Attempting to read from NULL
-
-//     sds* paths  = NULL;
-//     bool result = SDL_EnumerateDirectory(root, modules_callback, &paths);
-//     if(!result) {
-//         titus_log_error("Error while enumerating directory: %s", SDL_GetError());
-//     }
-
-//     return paths;
-// }
-
-// bool titus_load_manifest_from_path(const char* path, TitusModuleManifest* out) {
-//     TITUS_ASSERT(path != NULL); // precondition: Attempting to load from empty path
-//     TITUS_ASSERT(out != NULL);  // precondition: Attempting to write to NULL
-
-//     // Check if path exists
-//     if(!SDL_GetPathInfo(path, NULL)) {
-//         titus_log_warn("Manifest file does not exists at path: %s", path);
-//         return false;
-//     }
-
-//     size_t data_size = 0;
-//     char* data       = SDL_LoadFile(path, &data_size);
-
-//     return titus_parse_manifest(data, data_size, out);
-// }
-
-// Deserialize a module manifest file to get it's metadata
+/**
+ * @brief Deserialize module manifest.
+ *
+ * @param data Pointer to manifest bytes.
+ * @param len Length of manifest bytes.
+ * @param out Metadata object to put the manifest data in.
+ * @return true On successful deserialization.
+ * @return false On unsuccessful deserialization.
+ */
 bool titus_parse_manifest(char* data, size_t len, TitusModuleMetaData* out) {
     TITUS_ASSERT(data != NULL); // precondition: Attempting to read from NULL
     TITUS_ASSERT(out != NULL);  // precondition: Attempting to write to NULL
     TITUS_ASSERT(len != 0);     // precondition: Zero-length byte array for data
-
-    bool namespace_found = false;
-    bool name_found      = false;
-    bool version_found   = false;
 
     yyjson_read_err err;
     yyjson_read_flag flags = YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_TRAILING_COMMAS;
@@ -233,13 +264,11 @@ bool titus_parse_manifest(char* data, size_t len, TitusModuleMetaData* out) {
     while((key = yyjson_obj_iter_next(&it))) {
         val = yyjson_obj_iter_get_val(key);
         if(yyjson_equals_str(key, "namespace")) {
-            out->namespace  = sdsnew(yyjson_get_str(val));
-            namespace_found = true;
+            out->namespace = sdsnew(yyjson_get_str(val));
         }
 
         if(yyjson_equals_str(key, "name")) {
-            out->name  = sdsnew(yyjson_get_str(val));
-            name_found = true;
+            out->name = sdsnew(yyjson_get_str(val));
         }
 
         if(yyjson_equals_str(key, "version")) {
@@ -247,39 +276,46 @@ bool titus_parse_manifest(char* data, size_t len, TitusModuleMetaData* out) {
             out->version.minor      = yyjson_get_uint(yyjson_obj_get(val, "minor"));
             out->version.patch      = yyjson_get_uint(yyjson_obj_get(val, "patch"));
             out->version.annotation = sdsnew(yyjson_get_str(yyjson_obj_get(val, "annotation")));
-            version_found           = true;
         }
     }
 
     yyjson_doc_free(doc);
 
-    if(!namespace_found) {
-        titus_log_error("module.json does not define required field: 'namespace'");
-        return false;
-    }
-
-    if(!name_found) {
-        titus_log_error("module.json does not define required field: 'name'");
-        return false;
-    }
-
-    if(!version_found) {
-        titus_log_error("module.json does not define required field: 'version'");
-        return false;
-    }
-
     return true;
 }
 
-// TitusModuleLoadInfo* titus_get_module_load_info_from_dir(const char* root) {
-//     TITUS_ASSERT(NULL != root); // precondition: Attempting to read from NULL
+/**
+ * @brief Allocates a TitusModuleMetaData via `malloc`, and zero-initializes it.
+ *
+ * @return TitusModuleMetaData*
+ */
+TitusModuleMetaData* titus_metadata_new_empty() {
+    TitusModuleMetaData* meta = malloc(sizeof(TitusModuleMetaData));
+    memset(meta, 0, sizeof(TitusModuleMetaData));
+    return meta;
+}
 
-//     TitusModuleLoadInfo* loads = NULL;
+/**
+ * @brief Checks that string fields are not null, and that version field is not all zero with NULL annotation. The
+ * version can be 0 with an annotation (e.g. 0.0.0-alpha).
+ *
+ * @param meta
+ * @return sds `NULL` if no missing fields, otherwise the name of the field. The returned pointer should be freed with
+ * `sdsfree`.
+ */
+sds titus_validate_metadata(const TitusModuleMetaData* meta) {
+    if(NULL == meta->namespace) {
+        return sdsnew("namespace");
+    }
 
-//     bool result = SDL_EnumerateDirectory(root, modules_callback, &loads);
-//     if(!result) {
-//         titus_log_error("Error while enumerating directory: %s", SDL_GetError());
-//     }
+    if(NULL == meta->name) {
+        return sdsnew("name");
+    }
 
-//     return loads;
-// }
+    if(meta->version.major == 0 && meta->version.minor == 0 && meta->version.patch &&
+       meta->version.annotation == NULL) {
+        return sdsnew("version");
+    }
+
+    return NULL;
+}
