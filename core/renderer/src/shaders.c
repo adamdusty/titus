@@ -5,9 +5,14 @@
 #include <titus/sdk.h>
 
 SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_context* context) {
-    const char* vert_path = titus_get_asset_path(ecs, "core", "renderer", "shaders/vert.spv");
-    size_t vsize          = 0;
-    uint8_t* vert_bytes   = load_spirv(vert_path, &vsize);
+    sds vert_path = sdsdup(core_renderer_resource_directory);
+    vert_path     = sdscat(vert_path, "shaders/phong.vert.spv");
+    titus_log_debug("vert_path: %s", vert_path);
+    size_t vsize        = 0;
+    uint8_t* vert_bytes = SDL_LoadFile(vert_path, &vsize);
+    if(NULL == vert_bytes) {
+        titus_log_error("Failed to load shader at %s: %s", vert_path, SDL_GetError());
+    }
 
     SDL_GPUShaderCreateInfo vert_ci = {0};
     vert_ci.code                    = vert_bytes;
@@ -19,9 +24,13 @@ SDL_GPUGraphicsPipeline* create_default_pipeline(ecs_world_t* ecs, core_render_c
 
     SDL_GPUShader* vert_shader = SDL_CreateGPUShader(context->device, &vert_ci);
 
-    const char* frag_path = titus_get_asset_path(ecs, "core", "renderer", "shaders/frag.spv");
-    size_t fsize          = 0;
-    uint8_t* frag_bytes   = load_spirv(frag_path, &fsize);
+    sds frag_path       = sdsdup(core_renderer_resource_directory);
+    frag_path           = sdscat(frag_path, "shaders/phong.frag.spv");
+    size_t fsize        = 0;
+    uint8_t* frag_bytes = load_spirv(frag_path, &fsize);
+    if(NULL == frag_bytes) {
+        titus_log_error("Failed to load shader at %s: %s", vert_path, SDL_GetError());
+    }
 
     SDL_GPUShaderCreateInfo frag_ci = {0};
     frag_ci.code                    = frag_bytes;

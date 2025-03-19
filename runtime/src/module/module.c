@@ -76,7 +76,7 @@ bool titus_load_module_binary(TitusModule* mod) {
     }
 
     mod->initialize   = (titus_initialize_proc)SDL_LoadFunction(mod->binary, TITUS_MODULE_INITIALIZE);
-    mod->deinitialize = (titus_initialize_proc)SDL_LoadFunction(mod->binary, TITUS_MODULE_DEINITIALIZE);
+    mod->deinitialize = (titus_deinitialize_proc)SDL_LoadFunction(mod->binary, TITUS_MODULE_DEINITIALIZE);
 
     sdsfree(bin_path);
     return true;
@@ -102,8 +102,8 @@ TitusModule* titus_load_pack_modules(TitusModuleMetaData* required,
                                      size_t available_count) {
     TitusModule* modules = NULL;
 
-    bool found = false;
     for(size_t i = 0; i < required_count; i++) {
+        bool found = false;
         for(size_t j = 0; j < available_count; j++) {
             if(titus_meta_data_equal(&required[i], available[j].metadata)) {
                 bool result = titus_load_module_binary(&available[j]);
@@ -115,11 +115,12 @@ TitusModule* titus_load_pack_modules(TitusModuleMetaData* required,
 
                 arrpush(modules, available[j]);
                 found = true;
+                break; // Break out of inner for loop when module is found
             }
-            if(found) {
-                found = false;
-                continue;
-            }
+        }
+
+        if(!found) {
+            titus_log_error("Failed to find required module: %s:%s", required[i].namespace, required[i].name);
         }
     }
 

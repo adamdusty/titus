@@ -12,6 +12,8 @@
 
 CoreMesh create_cube_mesh();
 
+sds core_renderer_resource_directory = NULL;
+
 static SDL_GPUGraphicsPipeline* default_pipeline = NULL;
 static SDL_GPUTexture* depth_texture             = NULL;
 static ecs_query_t* camera_query                 = NULL;
@@ -34,8 +36,11 @@ void rendererImport(ecs_world_t* ecs) {
     ECS_SYSTEM_DEFINE(ecs, render_frame, EcsPostUpdate, core.renderer.core_render_context($));
 }
 
-CORE_RENDERER_EXPORT void titus_initialize(const TitusApplicationContext* ctx) {
+CORE_RENDERER_EXPORT void titus_initialize(const TitusApplicationContext* ctx, sds root) {
     titus_log_info("Initializing core.renderer module");
+
+    core_renderer_resource_directory = sdsdup(root);
+    core_renderer_resource_directory = sdscat(core_renderer_resource_directory, "resources/");
 
     ecs_entity_t m = ecs_import(ctx->ecs, rendererImport, "core.renderer");
     if(0 == m) {

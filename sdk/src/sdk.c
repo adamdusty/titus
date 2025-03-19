@@ -46,3 +46,7 @@ TITUS_EXPORT int32_t titus_version_compare(const TitusVersion* lhs, const TitusV
 
     unreachable();
 }
+
+TITUS_EXPORT TitusVersion titus_parse_version(const char* version_str) {
+    TITUS_ASSERT(false); // Unimplemented
+}

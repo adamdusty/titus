@@ -1,7 +1,6 @@
 #pragma once
 
 #include "titus/assert/assert.h"
-#include "titus/assets/assets.h"
 #include "titus/context/context.h"
 #include "titus/ds/stb_ds.h"
 #include "titus/log/log.h"
@@ -18,3 +17,4 @@ typedef struct TitusVersion {
 
 TITUS_EXPORT sds titus_version_to_string(const TitusVersion* ver);
 TITUS_EXPORT int32_t titus_version_compare(const TitusVersion* lhs, const TitusVersion* rhs);
+TITUS_EXPORT TitusVersion titus_parse_version(const char* version_str);

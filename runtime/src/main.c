@@ -93,7 +93,7 @@ int main(int, char*[]) {
     // Initialize modules and start applciation
     for(int i = 0; i < arrlen(modules); i++) {
         if(NULL != modules[i].initialize)
-            modules[i].initialize(&context);
+            modules[i].initialize(&context, modules[i].root_directory);
     }
 
     // titus_timer t = {0};
@@ -102,7 +102,7 @@ int main(int, char*[]) {
         ecs_progress(context.ecs, 0);
     }
 
-    for(int i = 0; i < arrlen(modules); i++) {
+    for(ptrdiff_t i = arrlen(modules) - 1; i >= 0; i--) {
         if(NULL != modules[i].deinitialize)
             modules[i].deinitialize(&context);
     }
@@ -110,7 +110,7 @@ int main(int, char*[]) {
     /* Clean up */
     // Deinit modules in reverse order
     for(ptrdiff_t i = arrlen(modules) - 1; i >= 0; i--) {
-        titus_log_info("Freeing module: %s", modules[i]);
+        titus_log_info("Freeing module: %s:%s", modules[i].metadata->namespace, modules[i].metadata->name);
         titus_free_module(&modules[i]);
     }
     arrfree(modules);
