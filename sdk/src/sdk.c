@@ -59,64 +59,41 @@ TITUS_EXPORT int32_t titus_version_compare(const TitusVersion* lhs, const TitusV
  * @param out Address where the version is written too.
  * @return `true` on success, `false` on error.
  */
-TITUS_EXPORT bool titus_parse_version(char* version_str, TitusVersion* out) {
+TITUS_EXPORT bool titus_parse_version(const char* version_str, TitusVersion* out) {
     TITUS_ASSERT(version_str != NULL); // Can't parse a non-existent string
 
-    sds version = sdsnew(version_str);
-
-    char* token  = NULL;
-    char* rest   = NULL;
-    char* endptr = NULL;
-
-    // Parse major version
-    token = strtok_s(version, ".", &rest);
-    if(token == NULL) {
-        sdsfree(version);
-        return false;
-    }
-    errno      = 0; // Reset errno before each call
-    out->major = strtoull(token, &endptr, 10);
-    if(errno == ERANGE || token == endptr || *endptr != '\0') {
-        sdsfree(version);
-        return false;
+    int num_splits = 0;
+    sds* splits    = sdssplitlen(version_str, (ptrdiff_t)strlen(version_str), "-", 1, &num_splits);
+    if(num_splits == 2) {
+        out->annotation = splits[1];
     }
 
-    // Parse minor version
-    token = strtok_s(NULL, ".", &rest);
-    if(token == NULL) {
-        sdsfree(version);
-        return false;
+    num_splits    = 0;
+    sds* versions = sdssplitlen(splits[0], (ptrdiff_t)sdslen(splits[0]), ".", 1, &num_splits);
+    if(num_splits != 3) {
+        return false; // Version requires major, minor, and patch
     }
+
     errno      = 0;
-    out->minor = strtoull(token, &endptr, 10);
-    if(errno == ERANGE || token == endptr || *endptr != '\0') {
-        sdsfree(version);
+    char* end  = NULL;
+    out->major = strtoull(versions[0], &end, 10);
+    if(errno == ERANGE || end == versions[0]) {
         return false;
     }
 
-    // Parse patch version and optional annotation
-    token = strtok_s(NULL, "-", &rest);
-    if(token == NULL) {
-        sdsfree(version);
-        return false;
-    }
     errno      = 0;
-    out->patch = strtoull(token, &endptr, 10);
-    if(errno == ERANGE || token == endptr || *endptr != '\0') {
-        sdsfree(version);
+    end        = NULL;
+    out->minor = strtoull(versions[1], &end, 10);
+    if(errno == ERANGE || end == versions[1]) {
         return false;
     }
 
-    // Parse annotation (if present)
-    token = strtok_s(NULL, "", &rest);
-    if(token != NULL) {
-        out->annotation = strdup(token);
-        if(out->annotation == NULL) {
-            sdsfree(version);
-            return false;
-        }
+    errno      = 0;
+    end        = NULL;
+    out->patch = strtoull(versions[2], &end, 10);
+    if(errno == ERANGE || end == versions[2]) {
+        return false;
     }
 
-    sdsfree(version);
     return true;
 }

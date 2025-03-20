@@ -36,7 +36,7 @@ void test_titus_version_compare(void) {
 }
 
 void test_parse_version(void) {
-    char* version = "1.2.3-alpha\0";
+    char* version = "1.2.3-alpha";
 
     TitusVersion res = {0};
     TitusVersion exp = {.major = 1, .minor = 2, .patch = 3, .annotation = sdsnew("alpha")};

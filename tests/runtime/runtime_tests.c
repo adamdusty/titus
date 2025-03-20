@@ -31,6 +31,8 @@ void test_deserialize_module_metadata(void) {
     };
 
     TitusModuleMetaDataDeserializationResult res = titus_module_meta_deserialize(root);
+    yyjson_doc_free(doc);
+
     test_assert(res.error == NULL);
     test_assert(titus_meta_data_equal(&res.meta, &exp));
 }

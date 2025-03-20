@@ -54,6 +54,46 @@ TitusModulePackDeserializationResult titus_module_pack_deserialize(yyjson_val* j
 }
 
 TitusModuleMetaDataDeserializationResult titus_module_meta_deserialize(yyjson_val* json) {
-    TitusModuleMetaDataDeserializationResult result = {.error = "Unimplemented"};
+    TitusModuleMetaDataDeserializationResult result = {0};
+
+    if(yyjson_get_type(json) != YYJSON_TYPE_OBJ) {
+        result.error = "JSON value for module metadata should be object.";
+        return result;
+    }
+
+    yyjson_val* jnamespace = yyjson_obj_get(json, "namespace");
+    if(jnamespace == NULL) {
+        result.error = "Required field `namespace` not found.";
+        return result;
+    } else if(yyjson_get_type(jnamespace) != YYJSON_TYPE_STR) {
+        result.error = "JSON value for field `namespace` should a string.";
+        return result;
+    }
+
+    yyjson_val* jname = yyjson_obj_get(json, "name");
+    if(jname == NULL) {
+        result.error = "Required field `name` not found.";
+        return result;
+    } else if(yyjson_get_type(jname) != YYJSON_TYPE_STR) {
+        result.error = "JSON value for field `jname` should a string.";
+        return result;
+    }
+
+    yyjson_val* jversion = yyjson_obj_get(json, "version");
+    if(jversion == NULL) {
+        result.error = "Required field `version` not found.";
+        return result;
+    } else if(yyjson_get_type(jversion) != YYJSON_TYPE_STR) {
+        result.error = "JSON value for field `jversion` should a string.";
+        return result;
+    }
+
+    result.meta.namespace = sdsnew(yyjson_get_str(jnamespace));
+    result.meta.name      = sdsnew(yyjson_get_str(jname));
+    if(!titus_parse_version(yyjson_get_str(jversion), &result.meta.version)) {
+        result.error = "Failed to parse version number.";
+        return result;
+    }
+
     return result;
 }
