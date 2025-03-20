@@ -1,0 +1,59 @@
+#include "serialization/serialization.h"
+
+/**
+ * @brief Deserializes a json object and returns the result. If no error occured, the error field will be NULL,
+ * otherwise it will contain a message describing the error. If `error` is not `NULL`, then `value` is not completely
+ * defined.
+ *
+ * @param json
+ * @return TitusModulePackDeserializationResult
+ */
+TitusModulePackDeserializationResult titus_module_pack_deserialize(yyjson_val* json) {
+    TITUS_ASSERT(json != NULL); // precondition: json data is not null
+
+    TitusModulePackDeserializationResult result = {0};
+
+    if(yyjson_get_type(json) != YYJSON_TYPE_OBJ) {
+        result.error = "JSON value for pack should be of type object.";
+        return result;
+    }
+
+    yyjson_val* jname = yyjson_obj_get(json, "name");
+    if(jname == NULL) {
+        result.error = "Required field `name` missing from JSON object.";
+        return result;
+    }
+
+    yyjson_val* jmodules = yyjson_obj_get(json, "modules");
+    if(jname == NULL) {
+        result.error = "Required field `modules` not found";
+    }
+
+    result.pack.module_count = yyjson_arr_size(jmodules);
+    result.pack.modules      = malloc(sizeof(TitusModuleMetaData) * result.pack.module_count);
+    if(result.pack.modules == NULL) {
+        titus_log_error("Failed to allocate memory: %s:%d [%s]", __FILE__, __LINE__, __FUNCTION__);
+        titus_log_error("Exiting application.");
+        exit(EXIT_FAILURE);
+    }
+
+    yyjson_val* hit = NULL;
+    size_t idx      = 0;
+    size_t max      = 0;
+    yyjson_arr_foreach(jmodules, idx, max, hit) {
+        TitusModuleMetaDataDeserializationResult metadata_result = titus_module_meta_deserialize(hit);
+        if(metadata_result.error != NULL) {
+            result.error = metadata_result.error;
+            return result;
+        }
+
+        result.pack.modules[idx] = metadata_result.meta;
+    }
+
+    return result;
+}
+
+TitusModuleMetaDataDeserializationResult titus_module_meta_deserialize(yyjson_val* json) {
+    TitusModuleMetaDataDeserializationResult result = {.error = "Unimplemented"};
+    return result;
+}
