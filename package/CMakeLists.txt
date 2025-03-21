@@ -2,8 +2,11 @@
 
 add_custom_target(titus ALL
    COMMAND ${CMAKE_COMMAND} -E make_directory "modules"
+   COMMAND ${CMAKE_COMMAND} -E make_directory "packs"
    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:titus_rt> .
 )
+
+configure_file(default.pack packs/default.pack)
 
 if(WIN32)
     add_custom_command(TARGET titus POST_BUILD

@@ -20,19 +20,24 @@ TitusModulePackDeserializationResult titus_module_pack_deserialize(yyjson_val* j
 
     yyjson_val* jname = yyjson_obj_get(json, "name");
     if(jname == NULL) {
-        result.error = "Required field `name` missing from JSON object.";
+        result.error = "Required field name missing from JSON object.";
         return result;
     }
 
     yyjson_val* jmodules = yyjson_obj_get(json, "modules");
-    if(jname == NULL) {
-        result.error = "Required field `modules` not found";
+    if(jmodules == NULL) {
+        result.error = "Required field modules not found.";
+        return result;
+    } else if(yyjson_get_type(jmodules) != YYJSON_TYPE_ARR) {
+        result.error = "modules field should an array.";
+        return result;
     }
 
+    result.pack.name         = sdsnew(yyjson_get_str(jname));
     result.pack.module_count = yyjson_arr_size(jmodules);
     result.pack.modules      = malloc(sizeof(TitusModuleMetaData) * result.pack.module_count);
     if(result.pack.modules == NULL) {
-        titus_log_error("Failed to allocate memory: %s:%d [%s]", __FILE__, __LINE__, __FUNCTION__);
+        titus_log_error("Failed to allocate memory: %s:%d [%s]", __FILE__, __LINE__, __func__);
         titus_log_error("Exiting application.");
         exit(EXIT_FAILURE);
     }

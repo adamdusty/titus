@@ -1,0 +1,20 @@
+{
+    "name": "default-pack",
+    "modules": [
+        {
+            "namespace": "core",
+            "name": "core",
+            "version": "0.1.0-alpha",
+        },
+        {
+            "namespace": "core",
+            "name": "input",
+            "version": "0.1.0-alpha",
+        },
+        {
+            "namespace": "core",
+            "name": "renderer",
+            "version": "0.1.0-alpha",
+        }
+    ]
+}

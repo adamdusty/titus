@@ -19,6 +19,7 @@
 
 static const char* MANIFEST_FILE_NAME = "module.json";
 
+// TODO: Move to serialization
 bool titus_parse_manifest(char* data, size_t len, TitusModuleMetaData* out);
 
 /**
@@ -74,8 +75,8 @@ SDL_EnumerationResult manifest_cb(void* user_data, const char* dir, const char* 
 TitusModule* titus_get_available_modules(sds root) {
     TitusModule* modules = NULL;
 
-    bool result = SDL_EnumerateDirectory(root, manifest_cb, &modules);
-    if(!result) {
+    SDL_EnumerationResult result = SDL_EnumerateDirectory(root, manifest_cb, &modules);
+    if(result != SDL_ENUM_SUCCESS) {
         titus_log_error("Failed to enumerate module directory: %s", SDL_GetError());
     }
 
