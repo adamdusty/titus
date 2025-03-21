@@ -67,13 +67,14 @@ SDL_EnumerationResult pack_json_cb(void* user_data, const char* dir, const char*
 
         TitusModulePackDeserializationResult result = titus_module_pack_deserialize(yyjson_doc_get_root(doc));
         if(result.error != NULL) {
-            titus_log_error("Failed to deserialize pack file: %s", result.error);
+            titus_log_warn("Error encountered while deserializing pack [%s]: %s", path, result.error);
             sdsfree(path);
             return SDL_ENUM_CONTINUE;
         }
 
         arrpush(*packs, result.pack);
 
+        sdsfree(path);
         return SDL_ENUM_CONTINUE;
     };
 

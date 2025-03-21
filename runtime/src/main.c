@@ -35,7 +35,6 @@ int main(int, char*[]) {
 
     TitusConfig app_config = titus_default_config();
     initialize_logging(&app_config);
-    // titus_log_error("hello world");
 
     TitusApplicationContext context = {0};
     initialize_application_context(&context);
@@ -58,6 +57,10 @@ int main(int, char*[]) {
     // Find all pack files
     pack_directory         = sdscatfmt(pack_directory, "/%s", app_config.pack_directory);
     TitusModulePack* packs = titus_get_module_packs(pack_directory);
+    if(packs == NULL) {
+        titus_log_error("No valid packs found.");
+        exit(EXIT_FAILURE);
+    }
 
     // TODO: Allow user to choose pack or set default pack(?)
     // TODO: Verify that all modules in pack are available

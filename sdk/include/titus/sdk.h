@@ -18,3 +18,6 @@ typedef struct TitusVersion {
 TITUS_EXPORT sds titus_version_to_string(const TitusVersion* ver);
 TITUS_EXPORT int32_t titus_version_compare(const TitusVersion* lhs, const TitusVersion* rhs);
 TITUS_EXPORT bool titus_parse_version(const char* version_str, TitusVersion* out);
+
+// TODO: write test & implement. Unsure of design
+TITUS_EXPORT bool titus_check_version(const TitusVersion* version, const TitusVersion required);
