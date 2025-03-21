@@ -58,17 +58,6 @@ int main(int, char*[]) {
     // Find all pack files
     pack_directory         = sdscatfmt(pack_directory, "/%s", app_config.pack_directory);
     TitusModulePack* packs = titus_get_module_packs(pack_directory);
-    titus_log_debug("%d", arrlen(packs));
-    for(int i = 0; i < arrlen(packs); i++) {
-        titus_log_debug("Pack: %s", packs[i].name);
-        titus_log_debug("Pack Modules: %d", packs[i].module_count);
-        for(size_t j = 0; j < packs[i].module_count; j++) {
-            titus_log_debug("%s:%s-%s",
-                            packs[i].modules[j].namespace,
-                            packs[i].modules[j].name,
-                            titus_version_to_string(&packs[i].modules[j].version));
-        }
-    }
 
     // TODO: Allow user to choose pack or set default pack(?)
     // TODO: Verify that all modules in pack are available
