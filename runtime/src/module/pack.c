@@ -2,7 +2,7 @@
 
 #include "serialization/serialization.h"
 #include <SDL3/SDL.h>
-#include <titus/assert/assert.h>
+#include <titus/assert.h>
 
 static constexpr char PACK_EXT[] = "pack";
 

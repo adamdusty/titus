@@ -1,6 +1,6 @@
 #include "gpu.h"
 
-#include <titus/log/log.h>
+#include <titus/log.h>
 
 uint8_t* load_spirv(const char* path, size_t* size) {
     uint8_t* bytes = SDL_LoadFile(path, size);

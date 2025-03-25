@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <titus/assert/assert.h>
+#include <titus/assert.h>
 #include <yyjson.h>
 
 #ifdef __linux__
