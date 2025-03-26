@@ -17,7 +17,7 @@
             "version": "0.1.0-alpha"
         },
         {
-            "namespace": "example",
+            "namespace": "examples",
             "name": "testing",
             "version": "0.1.0-beta"
         }
