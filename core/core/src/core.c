@@ -28,7 +28,7 @@ CORE_MODULE_EXPORT void coreImport(ecs_world_t* ecs) {
     titus_log_info("Core module imported");
 }
 
-CORE_MODULE_EXPORT void titus_initialize(TitusApplicationContext* ctx) {
+CORE_MODULE_EXPORT void titus_initialize(TitusApplicationContext* ctx, sds /* root */) {
     titus_log_info("Initializing the core module");
 
     ECS_IMPORT(ctx->ecs, core);

@@ -1,4 +1,5 @@
 add_subdirectory(minimal)
+add_subdirectory(testingground)
 
 add_custom_target(examples ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "modules/minimal"
