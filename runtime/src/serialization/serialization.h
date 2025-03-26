@@ -13,5 +13,11 @@ typedef struct TitusModuleMetaDataDeserializationResult {
     const char* error;
 } TitusModuleMetaDataDeserializationResult;
 
+typedef struct TitusRequiredModuleDeserializationResult {
+    TitusRequiredModule module;
+    const char* error;
+} TitusRequiredModuleDeserializationResult;
+
 TitusModulePackDeserializationResult titus_module_pack_deserialize(yyjson_val* json);
 TitusModuleMetaDataDeserializationResult titus_module_meta_deserialize(yyjson_val* json);
+TitusRequiredModuleDeserializationResult titus_required_module_deserialize(yyjson_val* json);

@@ -14,16 +14,16 @@ static constexpr char PACK_EXT[] = "pack";
  * @param count Number of metadata objects in `modules`.
  * @return TitusModulePack
  */
-TitusModulePack titus_module_pack_create(sds name, TitusModuleMetaData* modules, size_t count) {
+TitusModulePack titus_module_pack_create(sds name, TitusRequiredModule* modules, size_t count) {
     TitusModulePack pack = {.name = sdsdup(name), .module_count = count};
-    pack.modules         = malloc(sizeof(TitusModuleMetaData) * count);
+    pack.modules         = malloc(sizeof(TitusRequiredModule) * count);
     if(pack.modules == NULL) {
         titus_log_error("Failed to allocate memory: %s:%d [%s]", __FILE__, __LINE__, __func__);
         titus_log_error("Exiting application.");
         exit(EXIT_FAILURE);
     }
 
-    SDL_memcpy(pack.modules, modules, sizeof(TitusModuleMetaData) * count);
+    SDL_memcpy(pack.modules, modules, sizeof(TitusRequiredModule) * count);
     return pack;
 }
 

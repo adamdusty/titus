@@ -46,13 +46,13 @@ TitusModulePackDeserializationResult titus_module_pack_deserialize(yyjson_val* j
     size_t idx      = 0;
     size_t max      = 0;
     yyjson_arr_foreach(jmodules, idx, max, hit) {
-        TitusModuleMetaDataDeserializationResult metadata_result = titus_module_meta_deserialize(hit);
-        if(metadata_result.error != NULL) {
-            result.error = metadata_result.error;
+        TitusRequiredModuleDeserializationResult module_result = titus_required_module_deserialize(hit);
+        if(module_result.error != NULL) {
+            result.error = module_result.error;
             return result;
         }
 
-        result.pack.modules[idx] = metadata_result.meta;
+        result.pack.modules[idx] = module_result.module;
     }
 
     return result;
@@ -96,6 +96,51 @@ TitusModuleMetaDataDeserializationResult titus_module_meta_deserialize(yyjson_va
     result.meta.namespace = sdsnew(yyjson_get_str(jnamespace));
     result.meta.name      = sdsnew(yyjson_get_str(jname));
     if(!titus_parse_version(yyjson_get_str(jversion), &result.meta.version)) {
+        result.error = "Failed to parse version number.";
+        return result;
+    }
+
+    return result;
+}
+
+TitusRequiredModuleDeserializationResult titus_required_module_deserialize(yyjson_val* json) {
+    TitusRequiredModuleDeserializationResult result = {0};
+
+    if(yyjson_get_type(json) != YYJSON_TYPE_OBJ) {
+        result.error = "JSON value for required module should be object.";
+        return result;
+    }
+
+    yyjson_val* jnamespace = yyjson_obj_get(json, "namespace");
+    if(jnamespace == NULL) {
+        result.error = "Required field `namespace` not found.";
+        return result;
+    } else if(yyjson_get_type(jnamespace) != YYJSON_TYPE_STR) {
+        result.error = "JSON value for field `namespace` should a string.";
+        return result;
+    }
+
+    yyjson_val* jname = yyjson_obj_get(json, "name");
+    if(jname == NULL) {
+        result.error = "Required field `name` not found.";
+        return result;
+    } else if(yyjson_get_type(jname) != YYJSON_TYPE_STR) {
+        result.error = "JSON value for field `jname` should a string.";
+        return result;
+    }
+
+    yyjson_val* jversion = yyjson_obj_get(json, "version");
+    if(jversion == NULL) {
+        result.error = "Required field `version` not found.";
+        return result;
+    } else if(yyjson_get_type(jversion) != YYJSON_TYPE_STR) {
+        result.error = "JSON value for field `jversion` should a string.";
+        return result;
+    }
+
+    result.module.nspace = sdsnew(yyjson_get_str(jnamespace));
+    result.module.name   = sdsnew(yyjson_get_str(jname));
+    if(!titus_parse_version(yyjson_get_str(jversion), &result.module.version)) {
         result.error = "Failed to parse version number.";
         return result;
     }
