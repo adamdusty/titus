@@ -63,8 +63,13 @@ void process_input(ecs_iter_t* it) {
                 break;
             }
             case SDL_EVENT_KEY_DOWN: {
-                if(fi->events[j].key.scancode == SDL_SCANCODE_ESCAPE) {
+                switch(fi->events[j].key.scancode) {
+                case SDL_SCANCODE_ESCAPE: {
                     ecs_set_id(it->world, q, q, qc->size, &(int){0});
+                    break;
+                }
+                default:
+                    break;
                 }
                 break;
             }

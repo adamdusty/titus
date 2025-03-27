@@ -36,3 +36,5 @@ typedef struct CoreMesh {
  * @return vec3f* Pointer to an array of positions.
  */
 CORE_MODULE_EXPORT CoreMesh core_create_capsule_mesh(float radius, float height, uint32_t slices, uint32_t stacks);
+
+CORE_MODULE_EXPORT CoreMesh core_create_cube_mesh(float width, float height, float depth);

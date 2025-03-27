@@ -134,6 +134,78 @@ CoreMesh core_create_capsule_mesh(float radius, float height, uint32_t slices, u
     return mesh;
 }
 
+CoreMesh core_create_cube_mesh(float width, float height, float depth) {
+    CoreMesh mesh;
+
+    // Define the 8 unique vertex positions of the cube
+    vec3 positions[] = {
+        {-width, -height, -depth}, // 0
+        {width, -height, -depth},  // 1
+        {width, height, -depth},   // 2
+        {-width, height, -depth},  // 3
+        {-width, -height, depth},  // 4
+        {width, -height, depth},   // 5
+        {width, height, depth},    // 6
+        {-width, height, depth}    // 7
+    };
+
+    // Define the 6 face normals of the cube
+    vec3 normals[] = {
+        {0.0f, 0.0f, -1.0f}, // Back face
+        {0.0f, 0.0f, 1.0f},  // Front face
+        {-1.0f, 0.0f, 0.0f}, // Left face
+        {1.0f, 0.0f, 0.0f},  // Right face
+        {0.0f, -1.0f, 0.0f}, // Bottom face
+        {0.0f, 1.0f, 0.0f}   // Top face
+    };
+
+    // Define the 12 triangles (2 per face) using the 8 unique vertices
+
+    // clang-format off
+    uint32_t face_indices[] = {
+        0,1,2,2,3,0, // Back face
+        4,5,6,6,7,4,// Front face
+        0,3,7,7,4,0,// Left face
+        1,5,6,6,2,1,// Right face
+        0,1,5,5,4,0,// Bottom face
+        3,2,6,6,7,3,// Top face
+    };
+    // clang-format on
+
+    // For flat shading, each face has its own set of vertices with the same normal
+    mesh.vertex_count = 36; // 6 faces * 6 vertices per face (2 triangles)
+    mesh.vertices     = (CoreVertexPositionNormal*)malloc(mesh.vertex_count * sizeof(CoreVertexPositionNormal));
+
+    mesh.index_count = 36; // 12 triangles * 3 indices per triangle
+    mesh.indices     = (uint32_t*)malloc(mesh.index_count * sizeof(uint32_t));
+
+    // Create vertices and assign normals
+    for(size_t i = 0; i < mesh.index_count; ++i) {
+        uint32_t vertex_index = face_indices[i];
+        memcpy(mesh.vertices[i].position, positions[vertex_index], sizeof(vec3));
+
+        // Assign the normal based on the face
+        if(i < 6) {
+            memcpy(mesh.vertices[i].normal, normals[0], sizeof(vec3)); // Back face
+        } else if(i < 12) {
+            memcpy(mesh.vertices[i].normal, normals[1], sizeof(vec3)); // Front face
+        } else if(i < 18) {
+            memcpy(mesh.vertices[i].normal, normals[2], sizeof(vec3)); // Left face
+        } else if(i < 24) {
+            memcpy(mesh.vertices[i].normal, normals[3], sizeof(vec3)); // Right face
+        } else if(i < 30) {
+            memcpy(mesh.vertices[i].normal, normals[4], sizeof(vec3)); // Bottom face
+        } else {
+            memcpy(mesh.vertices[i].normal, normals[5], sizeof(vec3)); // Top face
+        }
+
+        // Assign indices (just a linear sequence for flat shading)
+        mesh.indices[i] = i;
+    }
+
+    return mesh;
+}
+
 // Function to free a CoreMesh
 void core_free_core_mesh(CoreMesh* mesh) {
     if(mesh) {
