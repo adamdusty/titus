@@ -84,22 +84,6 @@ CORE_RENDERER_EXPORT void titus_initialize(const TitusApplicationContext* ctx, s
     mesh_query = ecs_query(
         ctx->ecs,
         {.expr = "[in] core.CoreMesh, [in] core.renderer.CoreMeshRenderInfo", .cache_kind = EcsQueryCacheAuto});
-
-    // ecs_query_t* mesh_no_info_q  = ecs_query(ctx->ecs, {.expr = "core.CoreMesh, !core.renderer.CoreMeshRenderInfo"});
-    // ecs_iter_t mesh_no_info_iter = ecs_query_iter(ctx->ecs, mesh_no_info_q);
-    // while(ecs_query_next(&mesh_no_info_iter)) {
-    //     CoreMesh* mesh = ecs_field(&mesh_no_info_iter, CoreMesh, 0);
-
-    //     for(int i = 0; i < mesh_no_info_iter.count; i++) {
-    //         CoreMeshRenderInfo* info = ecs_ensure(ctx->ecs, mesh_no_info_iter.entities[i], CoreMeshRenderInfo);
-    //         core_init_mesh_vertex_buffer(render_context->device, mesh, &info->vertex_buffer);
-    //         core_init_mesh_index_buffer(render_context->device, mesh, &info->index_buffer);
-
-    //         if(NULL == info->vertex_buffer || NULL == info->index_buffer) {
-    //             titus_log_error("Failed to create GPU buffers for mesh");
-    //         }
-    //     }
-    // }
 }
 
 CORE_RENDERER_EXPORT void titus_deinitialize(TitusApplicationContext* ctx) {
@@ -112,8 +96,8 @@ CORE_RENDERER_EXPORT void titus_deinitialize(TitusApplicationContext* ctx) {
         CoreMeshRenderInfo* ri = ecs_field(&mesh_info_iter, CoreMeshRenderInfo, 1);
 
         for(int i = 0; i < mesh_info_iter.count; i++) {
-            SDL_ReleaseGPUBuffer(rend->device, ri->vertex_buffer);
-            SDL_ReleaseGPUBuffer(rend->device, ri->index_buffer);
+            SDL_ReleaseGPUBuffer(rend->device, ri[i].vertex_buffer);
+            SDL_ReleaseGPUBuffer(rend->device, ri[i].index_buffer);
         }
     }
 
@@ -172,7 +156,10 @@ void render_frame(ecs_iter_t* it) {
         mat4 cam[2] = {0};
 
         glm_perspective(45.0f, 1280.0f / 720.0f, 0.01f, 1000.0f, cam[0]);
-        glm_lookat_rh_zo(*camera_position, (float[]){0.0f, 0.0f, 0.0f}, camera->up, cam[1]);
+
+        vec3 center = {0};
+        glm_vec3_add(*camera_position, camera->forward, center);
+        glm_lookat_rh_zo(*camera_position, center, camera->up, cam[1]);
         SDL_PushGPUVertexUniformData(cmdbuf, 0, &cam, sizeof(mat4) * 2);
 
         SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depth_target_info);
@@ -202,8 +189,12 @@ void render_frame(ecs_iter_t* it) {
         }
 
         SDL_EndGPURenderPass(render_pass);
-        SDL_SubmitGPUCommandBuffer(cmdbuf);
     }
+
+    SDL_SubmitGPUCommandBuffer(cmdbuf);
+
+    // ecs_iter_fini(&mesh_it);
+    // ecs_iter_fini(&camera_it);
 
     return;
 }
