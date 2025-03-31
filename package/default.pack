@@ -18,7 +18,7 @@
         },
         {
             "namespace": "examples",
-            "name": "testing",
+            "name": "exploratory",
             "version": "0.1.0-beta"
         }
     ]
