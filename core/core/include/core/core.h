@@ -14,6 +14,8 @@ typedef vec3 CoreRotation;
 typedef mat4 CoreTransform;
 
 extern CORE_MODULE_EXPORT ECS_COMPONENT_DECLARE(CoreFrameInput);
+extern CORE_MODULE_EXPORT ECS_COMPONENT_DECLARE(CoreFrameInputComponent);
+
 extern CORE_MODULE_EXPORT ECS_COMPONENT_DECLARE(CoreMesh);
 extern CORE_MODULE_EXPORT ECS_COMPONENT_DECLARE(CoreCamera);
 

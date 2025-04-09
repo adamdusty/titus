@@ -5,9 +5,11 @@
 #include "core/rendering.h"
 #include <titus/sdk.h>
 
-ECS_COMPONENT_DECLARE(CoreFrameInput) = 0;
-ECS_COMPONENT_DECLARE(CoreMesh)       = 0;
-ECS_COMPONENT_DECLARE(CoreCamera)     = 0;
+ECS_COMPONENT_DECLARE(CoreFrameInput)          = 0;
+ECS_COMPONENT_DECLARE(CoreFrameInputComponent) = 0;
+
+ECS_COMPONENT_DECLARE(CoreMesh)   = 0;
+ECS_COMPONENT_DECLARE(CoreCamera) = 0;
 
 ECS_COMPONENT_DECLARE(CorePosition) = 0;
 ECS_COMPONENT_DECLARE(CoreScale)    = 0;
@@ -19,8 +21,10 @@ CORE_MODULE_EXPORT void coreImport(ecs_world_t* ecs) {
     ECS_MODULE(ecs, core);
 
     ECS_COMPONENT_DEFINE(ecs, CoreFrameInput);
+
     ECS_COMPONENT_DEFINE(ecs, CoreCamera);
     ECS_COMPONENT_DEFINE(ecs, CoreMesh);
+
     ECS_COMPONENT_DEFINE(ecs, CorePosition);
     ECS_COMPONENT_DEFINE(ecs, CoreScale);
     ECS_COMPONENT_DEFINE(ecs, CoreRotation);
