@@ -84,7 +84,6 @@ int main(int, char*[]) {
             modules[i].initialize(&context, modules[i].root_directory);
     }
 
-    // titus_timer t = {0};
     ecs_singleton_set(context.ecs, quit_t, {1});
     while(*ecs_singleton_get(context.ecs, quit_t) != 0) {
         ecs_progress(context.ecs, 0);

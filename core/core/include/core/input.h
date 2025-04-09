@@ -4,13 +4,13 @@
 #include <stdint.h>
 
 typedef enum CORE_KEY_STATE : char {
-    CORE_KEY_STATE_DOWN,
-    CORE_KEY_STATE_UP,
+    CORE_KEY_STATE_DOWN = 1,
+    CORE_KEY_STATE_UP   = 2,
 } CORE_KEY_STATE;
 
 typedef enum CORE_BUTTON_STATE : char {
-    CORE_BUTTON_STATE_DOWN,
-    CORE_BUTTON_STATE_UP,
+    CORE_BUTTON_STATE_DOWN = 1,
+    CORE_BUTTON_STATE_UP   = 2,
 } CORE_BUTTON_STATE;
 
 typedef struct CoreFrameInputState {

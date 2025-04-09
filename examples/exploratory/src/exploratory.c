@@ -4,7 +4,6 @@
 
 #include <core/core.h>
 #include <flecs.h>
-#include <math.h>
 
 static float t = 0;
 
@@ -17,7 +16,7 @@ EXPLORATORY_EXPORT void titus_initialize(const TitusApplicationContext* ctx, sds
     ecs_entity_t camera = create_camera(ctx->ecs);
     ecs_entity_t e      = create_example_entity(ctx->ecs);
 
-    ECS_SYSTEM(ctx->ecs, test_system, EcsOnUpdate, core.CoreCamera, core.CorePosition);
+    ECS_SYSTEM(ctx->ecs, test_system, EcsOnUpdate, core.CoreFrameInput($), core.CoreCamera, core.CorePosition);
 }
 
 ecs_entity_t create_camera(ecs_world_t* ecs) {
@@ -39,14 +38,25 @@ ecs_entity_t create_example_entity(ecs_world_t* ecs) {
 }
 
 void test_system(ecs_iter_t* it) {
-    CoreCamera* cam   = ecs_field(it, CoreCamera, 0);
-    CorePosition* pos = ecs_field(it, CorePosition, 1);
+    CoreFrameInput* input = ecs_field(it, CoreFrameInput, 0);
+    CoreCamera* cam       = ecs_field(it, CoreCamera, 1);
+    CorePosition* pos     = ecs_field(it, CorePosition, 2);
 
-    t += it->delta_time;
+    float speed = 10.0f;
 
     for(int i = 0; i < it->count; i++) {
-        pos[i][0] = sinf(t) * 5.0f;
-        pos[i][1] = sinf(t) * 5.0f;
+        if(input->state[0].scancodes[SDL_SCANCODE_A] == CORE_KEY_STATE_DOWN) {
+            pos[i][0] += speed * it->delta_time;
+        }
+        if(input->state[0].scancodes[SDL_SCANCODE_D] == CORE_KEY_STATE_DOWN) {
+            pos[i][0] -= speed * it->delta_time;
+        }
+        if(input->state[0].scancodes[SDL_SCANCODE_W] == CORE_KEY_STATE_DOWN) {
+            pos[i][1] += speed * it->delta_time;
+        }
+        if(input->state[0].scancodes[SDL_SCANCODE_S] == CORE_KEY_STATE_DOWN) {
+            pos[i][1] -= speed * it->delta_time;
+        }
     }
 }
 

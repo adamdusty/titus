@@ -7,7 +7,6 @@
 #include <cglm/cglm.h>
 #include <cglm/clipspace/view_rh_zo.h>
 #include <core/core.h>
-#include <stdlib.h>
 #include <titus/sdk.h>
 
 sds core_renderer_resource_directory = NULL;
@@ -159,7 +158,7 @@ void render_frame(ecs_iter_t* it) {
 
         vec3 center = {0};
         glm_vec3_add(*camera_position, camera->forward, center);
-        glm_lookat_rh_zo(*camera_position, center, camera->up, cam[1]);
+        glm_lookat(*camera_position, center, camera->up, cam[1]);
         SDL_PushGPUVertexUniformData(cmdbuf, 0, &cam, sizeof(mat4) * 2);
 
         SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depth_target_info);

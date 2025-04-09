@@ -36,12 +36,19 @@ void core_input_poll_system(ecs_iter_t* it) {
     CoreFrameInput* inp = ecs_field(it, CoreFrameInput, 0);
 
     inp->state[1] = inp->state[0];
-    SDL_memset(&inp->state[0], 0, sizeof(CoreFrameInputState));
+    // SDL_memset(&inp->state[0], 0, sizeof(CoreFrameInputState));
 
     for(int i = 0; i < it->count; i++) {
         SDL_Event e;
         while(SDL_PollEvent(&e)) {
             switch(e.type) {
+            case SDL_EVENT_QUIT: {
+                titus_log_debug("SDL_QUIT requested...");
+                ecs_entity_t q         = ecs_lookup(it->world, "quit_t");
+                const EcsComponent* qc = ecs_get_id(it->world, q, ecs_id(EcsComponent));
+                ecs_set_id(it->world, q, q, qc->size, &(int){0});
+                break;
+            }
             case SDL_EVENT_KEY_DOWN: {
                 inp->state[0].scancodes[e.key.scancode] = CORE_KEY_STATE_DOWN;
                 break;
