@@ -39,12 +39,6 @@ TitusModule* titus_get_available_modules(sds root);
 // Load a single module from path, which should point to a `module.json` file
 bool titus_load_module_binary(TitusModule* li);
 
-// Loads the modules in pack
-TitusModule* titus_load_pack_modules(TitusModuleMetaData* required,
-                                     size_t required_count,
-                                     TitusModule* available,
-                                     size_t available_count);
-
 void titus_free_module(TitusModule* module);
 
 // Deserialize a module manifest file to get it's metadata

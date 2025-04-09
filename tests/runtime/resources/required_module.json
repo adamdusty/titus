@@ -1,6 +1,5 @@
 {
     "namespace": "core",
-    "name": "core",
-    "binary": "core",
+    "name": "input",
     "version": "0.1.0"
 }

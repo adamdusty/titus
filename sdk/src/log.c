@@ -1,4 +1,4 @@
-#include "titus/log/log.h"
+#include "titus/log.h"
 
 #include <SDL3/SDL.h>
 #include <stdarg.h>

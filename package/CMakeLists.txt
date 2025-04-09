@@ -33,5 +33,6 @@ endfunction(ADD_MODULE module_name module_target)
 ADD_MODULE("core-core" core_module FALSE)
 ADD_MODULE("core-input" core_input FALSE)
 ADD_MODULE("core-renderer" core_renderer TRUE)
+ADD_MODULE("examples-exploratory" exploratory FALSE)
 
 add_dependencies(titus core_module core_input core_renderer)

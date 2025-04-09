@@ -2,13 +2,14 @@
 
 #include "module/module.h"
 
+#include "serialization/serialization.h"
 #include "titus/ds/stb_ds.h"
 #include "titus/sds/sds.h"
 #include <SDL3/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <titus/assert/assert.h>
+#include <titus/assert.h>
 #include <yyjson.h>
 
 #ifdef __linux__
@@ -43,13 +44,28 @@ SDL_EnumerationResult manifest_cb(void* user_data, const char* dir, const char* 
         TitusModule** modules = user_data;
 
         TitusModuleMetaData* meta = titus_metadata_new_empty();
-        if(!titus_deserialize_manifest(path, meta)) {
+        yyjson_read_err err       = {0};
+        yyjson_doc* doc =
+            yyjson_read_file(path, YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_TRAILING_COMMAS, NULL, &err);
+
+        if(doc == NULL) {
+            titus_log_error("Failed to read manifest file %s", path);
+            titus_log_error("%s", err.msg);
+            sdsfree(path);
+            return SDL_ENUM_CONTINUE;
+        }
+
+        yyjson_val* manifest_root                       = yyjson_doc_get_root(doc);
+        TitusModuleMetaDataDeserializationResult result = titus_module_meta_deserialize(manifest_root);
+        if(result.error != NULL) {
             titus_log_error("Failed to deserialize manifest at path: %s", path);
+            titus_log_error("%s", result.error);
 
             sdsfree(path);
             return SDL_ENUM_CONTINUE;
         }
 
+        *meta = result.meta;
         // Unitialized fields are zero initialized here.
         TitusModule mod = {.root_directory = sdsnew(dir), .metadata = meta};
         arrpush(*modules, mod);
@@ -130,47 +146,6 @@ bool titus_meta_data_equal(const TitusModuleMetaData* lhs, const TitusModuleMeta
     return sdscmp(lhs->namespace, rhs->namespace) == 0 && //
            sdscmp(lhs->name, rhs->name) == 0 &&           //
            titus_version_compare(&lhs->version, &rhs->version) == 0;
-}
-
-/**
- * @brief Searches through available modules for the required modules and loads it. Returns a pointer to a dynamic array
- * of loaded modules.
- *
- * @param required Pointer to an array of metadata for required modules.
- * @param required_count Number of metadata objects in `required`.
- * @param available Pointer to array of available modules.
- * @param available_count Number of module objects in `available`.
- * @return TitusModule*
- */
-TitusModule* titus_load_pack_modules(TitusModuleMetaData* required,
-                                     size_t required_count,
-                                     TitusModule* available,
-                                     size_t available_count) {
-    TitusModule* modules = NULL;
-
-    for(size_t i = 0; i < required_count; i++) {
-        bool found = false;
-        for(size_t j = 0; j < available_count; j++) {
-            if(titus_meta_data_equal(&required[i], available[j].metadata)) {
-                bool result = titus_load_module_binary(&available[j]);
-                if(!result) {
-                    titus_log_error("Failed to load required module: %s:%s",
-                                    available[j].metadata->namespace,
-                                    available[j].metadata->name);
-                }
-
-                arrpush(modules, available[j]);
-                found = true;
-                break; // Break out of inner for loop when module is found
-            }
-        }
-
-        if(!found) {
-            titus_log_error("Failed to find required module: %s:%s", required[i].namespace, required[i].name);
-        }
-    }
-
-    return modules;
 }
 
 // Unloads module binary, frees the metadata and pathinfo strings

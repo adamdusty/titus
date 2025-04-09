@@ -54,6 +54,10 @@ int main(int, char*[]) {
         exit(EXIT_FAILURE);
     }
 
+    for(int i = 0; i < arrlen(available_modules); i++) {
+        titus_log_debug("%s:%s", available_modules[i].metadata->namespace, available_modules[i].metadata->name);
+    }
+
     // Find all pack files
     pack_directory         = sdscatfmt(pack_directory, "/%s", app_config.pack_directory);
     TitusModulePack* packs = titus_get_module_packs(pack_directory);

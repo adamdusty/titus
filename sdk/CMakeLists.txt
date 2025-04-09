@@ -15,14 +15,15 @@ target_sources(titus_sdk
         BASE_DIRS include
         FILES
             "include/titus/sdk.h"
-            "include/titus/context/context.h"
-            "include/titus/log/log.h"
+            "include/titus/context.h"
+            "include/titus/log.h"
             "include/titus/sds/sds.h"
             "include/titus/ds/stb_ds.h"
-            "include/titus/assert/assert.h"
+            "include/titus/assert.h"
     PRIVATE
         src/sdk.c
         src/log.c
+        src/version.c
         src/sds.c
         src/stb_ds.c
 )

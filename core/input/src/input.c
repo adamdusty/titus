@@ -15,7 +15,7 @@ CORE_INPUT_EXPORT void inputImport(ecs_world_t* ecs) {
     ECS_SYSTEM_DEFINE(ecs, core_input_poll_system, EcsPreUpdate, core.CoreFrameInput);
 }
 
-CORE_INPUT_EXPORT void titus_initialize(TitusApplicationContext* ctx) {
+CORE_INPUT_EXPORT void titus_initialize(TitusApplicationContext* ctx, sds /* root */) {
     titus_log_info("Initializing core:input module");
 
     ecs_entity_t mod = ecs_import(ctx->ecs, inputImport, "core.input");

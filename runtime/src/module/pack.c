@@ -2,7 +2,7 @@
 
 #include "serialization/serialization.h"
 #include <SDL3/SDL.h>
-#include <titus/assert/assert.h>
+#include <titus/assert.h>
 
 static constexpr char PACK_EXT[] = "pack";
 
@@ -14,16 +14,16 @@ static constexpr char PACK_EXT[] = "pack";
  * @param count Number of metadata objects in `modules`.
  * @return TitusModulePack
  */
-TitusModulePack titus_module_pack_create(sds name, TitusModuleMetaData* modules, size_t count) {
+TitusModulePack titus_module_pack_create(sds name, TitusRequiredModule* modules, size_t count) {
     TitusModulePack pack = {.name = sdsdup(name), .module_count = count};
-    pack.modules         = malloc(sizeof(TitusModuleMetaData) * count);
+    pack.modules         = malloc(sizeof(TitusRequiredModule) * count);
     if(pack.modules == NULL) {
         titus_log_error("Failed to allocate memory: %s:%d [%s]", __FILE__, __LINE__, __func__);
         titus_log_error("Exiting application.");
         exit(EXIT_FAILURE);
     }
 
-    SDL_memcpy(pack.modules, modules, sizeof(TitusModuleMetaData) * count);
+    SDL_memcpy(pack.modules, modules, sizeof(TitusRequiredModule) * count);
     return pack;
 }
 
@@ -97,4 +97,52 @@ TitusModulePack* titus_get_module_packs(sds root) {
     }
 
     return pack_arr;
+}
+
+/**
+ * @brief Searches through available modules for the required modules and loads it. Returns a pointer to a dynamic array
+ * of loaded modules.
+ *
+ * @param required Pointer to an array of required modules.
+ * @param required_count Number of required module objects in `required`.
+ * @param available Pointer to array of available modules.
+ * @param available_count Number of module objects in `available`.
+ * @return TitusModule*
+ */
+TitusModule* titus_load_pack_modules(TitusRequiredModule* required,
+                                     size_t required_count,
+                                     TitusModule* available,
+                                     size_t available_count) {
+    TitusModule* modules = NULL;
+
+    for(size_t i = 0; i < required_count; i++) {
+        bool found = false;
+        for(size_t j = 0; j < available_count; j++) {
+            if(titus_metadata_satifies_required(available[j].metadata, &required[i])) {
+                bool result = titus_load_module_binary(&available[j]);
+                if(!result) {
+                    titus_log_error("Failed to load required module: %s:%s",
+                                    available[j].metadata->namespace,
+                                    available[j].metadata->name);
+                    continue;
+                }
+
+                arrpush(modules, available[j]);
+                found = true;
+                break; // Break out of inner for loop when module is found
+            }
+        }
+
+        if(!found) {
+            titus_log_error("Failed to find required module: %s:%s", required[i].nspace, required[i].name);
+        }
+    }
+
+    return modules;
+}
+
+bool titus_metadata_satifies_required(const TitusModuleMetaData* meta, const TitusRequiredModule* req) {
+    // TODO: Update this function with implementation of required version ranges
+    return sdscmp(meta->namespace, req->nspace) == 0 && sdscmp(meta->name, req->name) == 0 &&
+           titus_version_compare(&meta->version, &req->version) == 0;
 }

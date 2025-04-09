@@ -10,8 +10,6 @@
 #include <stdlib.h>
 #include <titus/sdk.h>
 
-CoreMesh create_cube_mesh();
-
 sds core_renderer_resource_directory = NULL;
 
 static SDL_GPUGraphicsPipeline* default_pipeline = NULL;
@@ -19,12 +17,13 @@ static SDL_GPUTexture* depth_texture             = NULL;
 static ecs_query_t* camera_query                 = NULL;
 static ecs_query_t* mesh_query                   = NULL;
 
-core_render_context* create_render_context(SDL_Window* window, ecs_world_t* ecs);
-void render_frame(ecs_iter_t* it);
-
 ECS_COMPONENT_DECLARE(core_render_context);
 ECS_COMPONENT_DECLARE(CoreMeshRenderInfo);
 ECS_SYSTEM_DECLARE(render_frame);
+
+void on_set_core_mesh(ecs_iter_t* it);
+core_render_context* create_render_context(SDL_Window* window, ecs_world_t* ecs);
+void render_frame(ecs_iter_t* it);
 
 void rendererImport(ecs_world_t* ecs) {
 
@@ -34,6 +33,13 @@ void rendererImport(ecs_world_t* ecs) {
     ECS_COMPONENT_DEFINE(ecs, CoreMeshRenderInfo);
 
     ECS_SYSTEM_DEFINE(ecs, render_frame, EcsPostUpdate, core.renderer.core_render_context($));
+
+    ecs_observer(ecs,
+                 {
+                     .query.terms = {{ecs_id(CoreMesh)}},
+                     .events      = EcsOnSet,
+                     .callback    = on_set_core_mesh,
+                 });
 }
 
 CORE_RENDERER_EXPORT void titus_initialize(const TitusApplicationContext* ctx, sds root) {
@@ -55,21 +61,6 @@ CORE_RENDERER_EXPORT void titus_initialize(const TitusApplicationContext* ctx, s
 
     SDL_SetGPUSwapchainParameters(
         render_context->device, render_context->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_VSYNC);
-
-    // size_t capsule_size = 0;
-    // CoreMesh capsule = create_cube_mesh(); // core_create_capsule_mesh(1.0f, 2.0f, 10, 10);
-    CoreMesh capsule = core_create_capsule_mesh(1.0f, 2.0f, 10, 10);
-
-    ecs_entity_t test_e = ecs_entity(ctx->ecs, {.name = "test_mesh"});
-    ecs_set(ctx->ecs,
-            test_e,
-            CoreMesh,
-            {
-                .vertices     = capsule.vertices,
-                .vertex_count = capsule.vertex_count,
-                .indices      = capsule.indices,
-                .index_count  = capsule.index_count,
-            });
 
     default_pipeline = create_default_pipeline(ctx->ecs, render_context);
 
@@ -93,32 +84,6 @@ CORE_RENDERER_EXPORT void titus_initialize(const TitusApplicationContext* ctx, s
     mesh_query = ecs_query(
         ctx->ecs,
         {.expr = "[in] core.CoreMesh, [in] core.renderer.CoreMeshRenderInfo", .cache_kind = EcsQueryCacheAuto});
-
-    ecs_entity_t cam = ecs_entity(ctx->ecs, {.name = "main_camera"});
-    ecs_set(ctx->ecs, cam, CorePosition, {0, 0, -100.0f});
-    ecs_set(ctx->ecs,
-            cam,
-            CoreCamera,
-            {
-                .up      = {0, 1.0f, 0},
-                .forward = {0, 0, 1.0f},
-            });
-
-    ecs_query_t* mesh_no_info_q  = ecs_query(ctx->ecs, {.expr = "core.CoreMesh, !core.renderer.CoreMeshRenderInfo"});
-    ecs_iter_t mesh_no_info_iter = ecs_query_iter(ctx->ecs, mesh_no_info_q);
-    while(ecs_query_next(&mesh_no_info_iter)) {
-        CoreMesh* mesh = ecs_field(&mesh_no_info_iter, CoreMesh, 0);
-
-        for(int i = 0; i < mesh_no_info_iter.count; i++) {
-            CoreMeshRenderInfo* info = ecs_ensure(ctx->ecs, mesh_no_info_iter.entities[i], CoreMeshRenderInfo);
-            core_init_mesh_vertex_buffer(render_context->device, mesh, &info->vertex_buffer);
-            core_init_mesh_index_buffer(render_context->device, mesh, &info->index_buffer);
-
-            if(NULL == info->vertex_buffer || NULL == info->index_buffer) {
-                titus_log_error("Failed to create GPU buffers for mesh");
-            }
-        }
-    }
 }
 
 CORE_RENDERER_EXPORT void titus_deinitialize(TitusApplicationContext* ctx) {
@@ -131,8 +96,8 @@ CORE_RENDERER_EXPORT void titus_deinitialize(TitusApplicationContext* ctx) {
         CoreMeshRenderInfo* ri = ecs_field(&mesh_info_iter, CoreMeshRenderInfo, 1);
 
         for(int i = 0; i < mesh_info_iter.count; i++) {
-            SDL_ReleaseGPUBuffer(rend->device, ri->vertex_buffer);
-            SDL_ReleaseGPUBuffer(rend->device, ri->index_buffer);
+            SDL_ReleaseGPUBuffer(rend->device, ri[i].vertex_buffer);
+            SDL_ReleaseGPUBuffer(rend->device, ri[i].index_buffer);
         }
     }
 
@@ -191,7 +156,10 @@ void render_frame(ecs_iter_t* it) {
         mat4 cam[2] = {0};
 
         glm_perspective(45.0f, 1280.0f / 720.0f, 0.01f, 1000.0f, cam[0]);
-        glm_lookat_rh_zo(*camera_position, (float[]){0.0f, 0.0f, 0.0f}, camera->up, cam[1]);
+
+        vec3 center = {0};
+        glm_vec3_add(*camera_position, camera->forward, center);
+        glm_lookat_rh_zo(*camera_position, center, camera->up, cam[1]);
         SDL_PushGPUVertexUniformData(cmdbuf, 0, &cam, sizeof(mat4) * 2);
 
         SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depth_target_info);
@@ -221,8 +189,12 @@ void render_frame(ecs_iter_t* it) {
         }
 
         SDL_EndGPURenderPass(render_pass);
-        SDL_SubmitGPUCommandBuffer(cmdbuf);
     }
+
+    SDL_SubmitGPUCommandBuffer(cmdbuf);
+
+    // ecs_iter_fini(&mesh_it);
+    // ecs_iter_fini(&camera_it);
 
     return;
 }
@@ -252,161 +224,20 @@ core_render_context* create_render_context(SDL_Window* window, ecs_world_t* ecs)
     return render_context;
 }
 
-CoreMesh create_cube_mesh() {
-    CoreMesh mesh;
+void on_set_core_mesh(ecs_iter_t* it) {
+    CoreMesh* mesh = ecs_field(it, CoreMesh, 0);
 
-    // Define the 8 unique vertex positions of the cube
-    vec3 positions[] = {
-        {-0.5f, -0.5f, -0.5f}, // 0
-        {0.5f, -0.5f, -0.5f},  // 1
-        {0.5f, 0.5f, -0.5f},   // 2
-        {-0.5f, 0.5f, -0.5f},  // 3
-        {-0.5f, -0.5f, 0.5f},  // 4
-        {0.5f, -0.5f, 0.5f},   // 5
-        {0.5f, 0.5f, 0.5f},    // 6
-        {-0.5f, 0.5f, 0.5f}    // 7
-    };
+    titus_log_debug("CoreMesh component was set on some entity");
 
-    // Define the 6 face normals of the cube
-    vec3 normals[] = {
-        {0.0f, 0.0f, -1.0f}, // Back face
-        {0.0f, 0.0f, 1.0f},  // Front face
-        {-1.0f, 0.0f, 0.0f}, // Left face
-        {1.0f, 0.0f, 0.0f},  // Right face
-        {0.0f, -1.0f, 0.0f}, // Bottom face
-        {0.0f, 1.0f, 0.0f}   // Top face
-    };
+    const core_render_context* rc = ecs_singleton_get(it->world, core_render_context);
 
-    // Define the 12 triangles (2 per face) using the 8 unique vertices
-    uint32_t face_indices[] = {
-        // Back face
-        0,
-        1,
-        2,
-        2,
-        3,
-        0,
+    for(int i = 0; i < it->count; i++) {
+        CoreMeshRenderInfo* info = ecs_ensure(it->world, it->entities[i], CoreMeshRenderInfo);
+        core_init_mesh_vertex_buffer(rc->device, mesh, &info->vertex_buffer);
+        core_init_mesh_index_buffer(rc->device, mesh, &info->index_buffer);
 
-        // Front face
-        4,
-        5,
-        6,
-        6,
-        7,
-        4,
-
-        // Left face
-        0,
-        3,
-        7,
-        7,
-        4,
-        0,
-
-        // Right face
-        1,
-        5,
-        6,
-        6,
-        2,
-        1,
-
-        // Bottom face
-        0,
-        1,
-        5,
-        5,
-        4,
-        0,
-
-        // Top face
-        3,
-        2,
-        6,
-        6,
-        7,
-        3,
-    };
-
-    // For flat shading, each face has its own set of vertices with the same normal
-    mesh.vertex_count = 36; // 6 faces * 6 vertices per face (2 triangles)
-    mesh.vertices     = (CoreVertexPositionNormal*)malloc(mesh.vertex_count * sizeof(CoreVertexPositionNormal));
-
-    mesh.index_count = 36; // 12 triangles * 3 indices per triangle
-    mesh.indices     = (uint32_t*)malloc(mesh.index_count * sizeof(uint32_t));
-
-    // Create vertices and assign normals
-    for(size_t i = 0; i < mesh.index_count; ++i) {
-        uint32_t vertex_index = face_indices[i];
-        memcpy(mesh.vertices[i].position, positions[vertex_index], sizeof(vec3));
-
-        // Assign the normal based on the face
-        if(i < 6) {
-            memcpy(mesh.vertices[i].normal, normals[0], sizeof(vec3)); // Back face
-        } else if(i < 12) {
-            memcpy(mesh.vertices[i].normal, normals[1], sizeof(vec3)); // Front face
-        } else if(i < 18) {
-            memcpy(mesh.vertices[i].normal, normals[2], sizeof(vec3)); // Left face
-        } else if(i < 24) {
-            memcpy(mesh.vertices[i].normal, normals[3], sizeof(vec3)); // Right face
-        } else if(i < 30) {
-            memcpy(mesh.vertices[i].normal, normals[4], sizeof(vec3)); // Bottom face
-        } else {
-            memcpy(mesh.vertices[i].normal, normals[5], sizeof(vec3)); // Top face
+        if(NULL == info->vertex_buffer || NULL == info->index_buffer) {
+            titus_log_error("Failed to create GPU buffers for mesh");
         }
-
-        // Assign indices (just a linear sequence for flat shading)
-        mesh.indices[i] = i;
     }
-
-    return mesh;
 }
-
-/*
-
-    // clang-format off
-    mesh.vertices = (CoreVertexPositionNormal[]){
-        {-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
-         {0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
-         {0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
-         {0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
-        {-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
-        {-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
-
-        {-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
-         {0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
-         {0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
-         {0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
-        {-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
-        {-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
-
-        {-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f},
-        {-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f},
-        {-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f},
-        {-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f},
-        {-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f},
-        {-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f},
-
-         {0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f},
-         {0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f},
-         {0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f},
-         {0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f},
-         {0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f},
-         {0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f},
-
-        {-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f},
-         {0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f},
-         {0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f},
-         {0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f},
-        {-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f},
-        {-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f},
-
-        {-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f},
-         {0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f},
-         {0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f},
-         {0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f},
-        {-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f},
-        {-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f},
-    };
-    // clang-format on
-*/
